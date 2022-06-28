@@ -7,9 +7,6 @@
 namespace Calc {
 
 struct Error {
-    std::pair<std::size_t, std::size_t> invalid_range;
-    std::pair<std::size_t, std::size_t> secondary_invalid_range = {0, 0};
-
     enum class Kind {
         UnclosedParen,
         ConstantTooLarge,
@@ -28,6 +25,9 @@ struct Error {
     };
 
     Kind kind;
+
+    std::pair<std::size_t, std::size_t> invalid_range;
+    std::pair<std::size_t, std::size_t> secondary_invalid_range = {0, 0};
 
     std::strong_ordering operator<=>(const Error& other) const = default;
 };
