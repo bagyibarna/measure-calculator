@@ -1,0 +1,3 @@
+[submodule "3pp/doctest"]
+	path = 3pp/doctest
+	url = https://github.com/doctest/doctest.git
