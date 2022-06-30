@@ -10,17 +10,16 @@ namespace Detail {
 
 namespace TokenData {
 
-using UnaryOp = Data::Container<Data::UnaryOp>::const_iterator;
-using BinaryOp = Data::Container<Data::BinaryOp>::const_iterator;
-using AmbigousOp = Data::Container<std::pair<Data::UnaryOp, Data::BinaryOp>>::const_iterator;
+using Operator = const Data::Operator*;
 
-using UnaryFun = Data::Container<Data::UnaryFun>::const_iterator;
-using BinaryFun = Data::Container<Data::BinaryFun>::const_iterator;
+using UnaryFun = const Data::UnaryFun*;
+using BinaryFun = const Data::BinaryFun*;
 
 using Value = Data::Value;
-using Constant = Data::Container<Data::Value>::const_iterator;
 
-using Measure = Data::Container<Data::Measure>::const_iterator;
+using Constant = const Data::Value*;
+
+using Measure = const Data::Measure*;
 
 struct OpenParen {};
 struct CloseParen {};
@@ -28,7 +27,7 @@ struct Comma {};
 struct Error {};
 struct Eof {};
 
-using Any = std::variant<UnaryOp, BinaryOp, AmbigousOp, Measure, UnaryFun, BinaryFun, Constant,
+using Any = std::variant<Operator, Measure, UnaryFun, BinaryFun, Constant,
                          Value, OpenParen, CloseParen, Comma, Error, Eof>;
 
 } // namespace TokenData

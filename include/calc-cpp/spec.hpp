@@ -2,6 +2,7 @@
 
 #include "char-classification.hpp"
 #include "data.hpp"
+#include "token.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -39,18 +40,9 @@ struct Spec {
     friend struct Detail::Lexer;
     friend struct Detail::Parser;
 
-    Data::Container<Data::UnaryOp> unary_ops;
-    Data::Container<Data::BinaryOp> binary_ops;
-    Data::Container<Data::AmbigousOp> ambigous_ops;
+    Data::Container<Data::Operator> op_specs;
 
-    std::vector<std::size_t> op_lengths;
-
-    Data::Container<Data::UnaryFun> unary_funs;
-    Data::Container<Data::BinaryFun> binary_funs;
-    Data::Container<Data::Value> constants;
-    Data::Container<Data::Measure> measures;
-
-    std::vector<std::size_t> ident_lengths;
+    Data::Container<Data::Identifier> identifier_specs;
 
     std::vector<std::string_view> measure_names;
 };
@@ -85,44 +77,30 @@ struct SpecBuilder {
     std::variant<Spec, Error> Build() && {
         Spec result;
 
-        std::unordered_set<std::string_view> deduplicator;
-        std::set<std::size_t> size_set;
-
         for (auto& [name, spec] : unary_ops) {
             if (!ValidOp(name)) {
                 return Error::InvalidOperatorName;
             }
 
-            if (!deduplicator.insert(name).second) {
+            auto& op = result.op_specs[name];
+            if (op.unary) {
                 return Error::DuplicateOperator;
             }
-
-            size_set.insert(name.size());
-            if (auto found = binary_ops.find(name); found != binary_ops.end()) {
-                result.ambigous_ops.emplace(
-                    name, std::make_pair(std::move(spec), std::move(found->second)));
-                binary_ops.erase(found);
-            } else {
-                result.unary_ops.emplace(name, std::move(spec));
-            }
+            op.unary = std::move(spec);
         }
 
-        deduplicator.clear();
-        result.binary_ops = std::move(binary_ops);
-        for (const auto& [name, _] : result.binary_ops) {
+        for (auto& [name, spec] : binary_ops) {
             if (!ValidOp(name)) {
                 return Error::InvalidOperatorName;
             }
 
-            if (!deduplicator.insert(name).second) {
+            auto& op = result.op_specs[name];
+            if (op.binary) {
                 return Error::DuplicateOperator;
             }
-            size_set.insert(name.size());
+            op.binary = std::move(spec);
         }
-        result.op_lengths = {size_set.begin(), size_set.end()};
 
-        deduplicator.clear();
-        size_set.clear();
         for (auto&& [name, units] : measures) {
             result.measure_names.push_back(name);
             for (auto& [unit_name, multiplier] : units) {
@@ -130,56 +108,31 @@ struct SpecBuilder {
                     return Error::InvalidOperatorName;
                 }
 
-                if (!deduplicator.insert(unit_name).second) {
-                    return Error::DuplicateIdentifier;
-                }
-
-                result.measures.emplace(unit_name, Data::Measure{
+                auto inserted = result.identifier_specs.emplace(unit_name, Data::Measure{
                                                        .id = result.measure_names.size(),
                                                        .multiplier = multiplier,
-                                                   });
-
-                size_set.insert(unit_name.size());
+                                                   }).second;
+                if (!inserted) {
+                    return Error::DuplicateIdentifier;
+                }
             }
         }
 
-        result.unary_funs = std::move(unary_funs);
-        for (const auto& [name, _] : result.unary_funs) {
-            if (!ValidIdentifier(name)) {
-                return Error::InvalidOperatorName;
-            }
+        auto add_identifiers = [&result](auto& source) {
+            for (auto& [name, spec] : source) {
+                if (!ValidIdentifier(name)) {
+                    return Error::InvalidOperatorName;
+                }
 
-            if (!deduplicator.insert(name).second) {
-                return Error::DuplicateIdentifier;
+                if (!result.identifier_specs.emplace(name, std::move(spec)).second) {
+                    return Error::DuplicateIdentifier;
+                }
             }
+        };
 
-            size_set.insert(name.size());
-        }
-        result.binary_funs = std::move(binary_funs);
-        for (const auto& [name, _] : result.binary_funs) {
-            if (!ValidIdentifier(name)) {
-                return Error::InvalidOperatorName;
-            }
-
-            if (!deduplicator.insert(name).second) {
-                return Error::DuplicateIdentifier;
-            }
-
-            size_set.insert(name.size());
-        }
-        result.constants = std::move(constants);
-        for (const auto& [name, _] : result.constants) {
-            if (!ValidIdentifier(name)) {
-                return Error::InvalidOperatorName;
-            }
-
-            if (!deduplicator.insert(name).second) {
-                return Error::DuplicateIdentifier;
-            }
-
-            size_set.insert(name.size());
-        }
-        result.ident_lengths = {size_set.begin(), size_set.end()};
+        add_identifiers(unary_funs);
+        add_identifiers(binary_funs);
+        add_identifiers(constants);
 
         return result;
     }

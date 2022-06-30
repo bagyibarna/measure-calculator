@@ -39,7 +39,7 @@ struct Lexer {
         }
 
         curr = Token{
-            .str = std::string_view(unanalyzed.data(), end),
+            .str = std::string_view(unanalyzed.data(), end - unanalyzed.data()),
             .data = TokenData::Value{result},
         };
         unanalyzed.remove_prefix(end - unanalyzed.data());
@@ -47,43 +47,27 @@ struct Lexer {
         return std::nullopt;
     }
 
-    template <class... Containers>
-    bool TokenizeLargestMatchingTokenFrom(const std::vector<std::size_t>& lengths,
-                                          const Containers&... containers) {
-        std::string_view last_str;
-        std::optional<TokenData::Any> last_data;
+    template<class Container>
+    std::variant<Error, const typename Container::mapped_type*> TokenizeFromSpec(Container& lookupSource, bool(*take_while)(char), Error::Kind kind) {
+        const auto begin = unanalyzed.begin();
+        const auto end = std::find_if(unanalyzed.begin(), unanalyzed.end(),
+                                                  [take_while](char c) { return !take_while(c); });
 
-        for (auto len : lengths) {
-            if (len > unanalyzed.size()) {
-                break;
+        for (auto size = end - begin; size > 0; --size) {
+            std::string_view atom(begin, size);
+            if (auto found = lookupSource.find(atom); found != lookupSource.end()) {
+                curr.str = atom;
+                unanalyzed.remove_prefix(size);
+                return &found->second;
             }
-
-            std::string_view new_trial(unanalyzed.data(), len);
-            auto check_container = [&](const auto& container) {
-                if (auto found = container.find(new_trial); found != container.end()) {
-                    last_data.emplace(found);
-                    last_str = new_trial;
-                    return true;
-                } else {
-                    return false;
-                }
-            };
-
-            (check_container(containers) || ...);
         }
 
-        if (!last_data) {
-            return false;
-        }
-
-        curr = {
-            .str = last_str,
-            .data = *last_data,
+        const auto start_index = total_string.size() - unanalyzed.size();
+        curr.data = TokenData::Error{};
+        return Error{
+            .invalid_range = {start_index, start_index + (end - begin)},
+            .kind = kind,
         };
-
-        unanalyzed.remove_prefix(last_str.size());
-
-        return true;
     }
 
     std::nullopt_t TokenizeSingleChar(TokenData::Any data) {
@@ -94,20 +78,6 @@ struct Lexer {
         unanalyzed.remove_prefix(1);
 
         return std::nullopt;
-    }
-
-    Error ErrorFromUnanalyzed(bool (*take_while)(char), Error::Kind kind) {
-        const auto last_invalid_it = std::find_if(unanalyzed.begin(), unanalyzed.end(),
-                                                  [take_while](char c) { return !take_while(c); });
-
-        const auto first_invalid = total_string.size() - unanalyzed.size();
-        const auto invalid_len = last_invalid_it - unanalyzed.begin();
-
-        curr.data = TokenData::Error{};
-        return Error{
-            .invalid_range = {first_invalid, first_invalid + invalid_len},
-            .kind = kind,
-        };
     }
 
     std::optional<Error> Step() {
@@ -137,25 +107,20 @@ struct Lexer {
         }
 
         if (IsOperatorChar(unanalyzed.front())) {
-            bool success = TokenizeLargestMatchingTokenFrom(spec.op_lengths, spec.unary_ops,
-                                                            spec.binary_ops, spec.ambigous_ops);
-            if (!success) {
-                curr.data = TokenData::Error{};
-                return ErrorFromUnanalyzed(IsOperatorChar, Error::Kind::UnknownOperator);
+            auto result = TokenizeFromSpec(spec.op_specs, IsOperatorChar, Error::Kind::UnknownOperator);
+            if (auto* error = std::get_if<Error>(&result)) {
+                return *error;
             }
-
+            curr.data = std::get<const Data::Operator*>(result);
             return std::nullopt;
         }
 
         if (IsIdentifierStartChar(unanalyzed.front())) {
-            bool success =
-                TokenizeLargestMatchingTokenFrom(spec.ident_lengths, spec.unary_funs,
-                                                 spec.binary_funs, spec.constants, spec.measures);
-            if (!success) {
-                curr.data = TokenData::Error{};
-                return ErrorFromUnanalyzed(IsIdentifierChar, Error::Kind::UnknownIdentifier);
+            auto result = TokenizeFromSpec(spec.identifier_specs, IsIdentifierChar, Error::Kind::UnknownIdentifier);
+            if (auto* error = std::get_if<Error>(&result)) {
+                return *error;
             }
-
+            std::visit([this](const auto& data) { curr.data = &data; }, *std::get<const Data::Identifier*>(result));
             return std::nullopt;
         }
 

@@ -121,7 +121,7 @@ struct Parser {
         }
 
         if (auto* constant = std::get_if<TokenData::Constant>(&lexer.curr.data)) {
-            result = MeasuredValue{.value = (*constant)->second};
+            result = MeasuredValue{.value = **constant};
             Step();
             return result;
         }
@@ -136,16 +136,14 @@ struct Parser {
             return inner;
         }
 
-        if (auto* unary_op = std::get_if<TokenData::UnaryOp>(&lexer.curr.data)) {
-            return ParseUnaryOperator((*unary_op)->second);
-        }
-
-        if (auto* ambigous_op = std::get_if<TokenData::AmbigousOp>(&lexer.curr.data)) {
-            return ParseUnaryOperator((*ambigous_op)->second.first);
+        if (auto* op = std::get_if<TokenData::Operator>(&lexer.curr.data)) {
+            if ((*op)->unary) {
+                return ParseUnaryOperator(*(*op)->unary);
+            }
         }
 
         if (auto* unary_fun = std::get_if<TokenData::UnaryFun>(&lexer.curr.data)) {
-            const auto& fun_spec = (*unary_fun)->second;
+            const auto& fun_spec = **unary_fun;
             Step();
             if (!Expect<TokenData::OpenParen>()) {
                 return std::nullopt;
@@ -167,7 +165,7 @@ struct Parser {
         }
 
         if (auto* binary_fun = std::get_if<TokenData::BinaryFun>(&lexer.curr.data)) {
-            const auto& fun_spec = (*binary_fun)->second;
+            const auto& fun_spec = **binary_fun;
             Step();
             if (!Expect<TokenData::OpenParen>()) {
                 return std::nullopt;
@@ -226,7 +224,7 @@ struct Parser {
         if (auto* measure = std::get_if<TokenData::Measure>(&lexer.curr.data)) {
             const auto measure_end = lexer.total_string.size() - lexer.unanalyzed.size();
             const auto measure_start = measure_end - lexer.curr.str.size();
-            const auto& measure_data = (*measure)->second;
+            const auto& measure_data = **measure;
             if (standalone_value->measure) {
                 if (standalone_value->measure->id != measure_data.id) {
                     OnError({
@@ -258,19 +256,18 @@ struct Parser {
             return std::nullopt;
         }
 
-        while (std::holds_alternative<TokenData::BinaryOp>(lexer.curr.data) ||
-               std::holds_alternative<TokenData::AmbigousOp>(lexer.curr.data)) {
-            const auto& op_spec =
-                std::holds_alternative<TokenData::BinaryOp>(lexer.curr.data)
-                    ? std::get<TokenData::BinaryOp>(lexer.curr.data)->second
-                    : std::get<TokenData::AmbigousOp>(lexer.curr.data)->second.second;
+        while (std::holds_alternative<TokenData::Operator>(lexer.curr.data)) {
+            const auto& binary = std::get<TokenData::Operator>(lexer.curr.data)->binary;
+            if (!binary) {
+                break;
+            }
 
-            if (op_spec.precedence < parent_precedence) {
+            if (binary->precedence < parent_precedence) {
                 break;
             }
 
             const auto right_prec =
-                op_spec.left_associative ? op_spec.precedence + 1 : op_spec.precedence;
+            binary->left_associative ? binary->precedence + 1 : binary->precedence;
 
             Step();
             auto right_expr = ParseExpression(right_prec);
@@ -295,7 +292,7 @@ struct Parser {
 
             root_value = MeasuredValue{
                 .measure = commonMeasure,
-                .value = op_spec.func(root_value->value, right_expr->value),
+                .value = binary->func(root_value->value, right_expr->value),
             };
         }
 

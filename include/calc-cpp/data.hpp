@@ -3,6 +3,8 @@
 #include <functional>
 #include <string_view>
 #include <utility>
+#include <unordered_map>
+#include <variant>
 
 namespace Calc {
 
@@ -23,7 +25,10 @@ struct BinaryOp {
     std::size_t precedence;
 };
 
-using AmbigousOp = std::pair<UnaryOp, BinaryOp>;
+struct Operator{
+    std::optional<UnaryOp> unary;
+    std::optional<BinaryOp> binary;
+};
 
 template <class T>
 struct Fun {
@@ -44,6 +49,8 @@ struct Measure {
 
 template <class T>
 using Container = std::unordered_map<std::string_view, T>;
+
+using Identifier = std::variant<UnaryFun, BinaryFun, Value, Measure>;
 
 } // namespace Data
 
