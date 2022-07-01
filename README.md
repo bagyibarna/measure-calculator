@@ -1,4 +1,4 @@
-![Unit Tests](https://github.com/bagyibarna/measure-calculator/actions/workflows/UnitTest/badge.svg)
+![Unit Tests](https://github.com/bagyibarna/measure-calculator/workflows/UnitTest/badge.svg)
 
 # A Fully Customizable, Interactive Calculator Library
 
