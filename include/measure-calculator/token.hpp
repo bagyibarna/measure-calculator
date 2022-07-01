@@ -10,16 +10,16 @@ namespace Detail {
 
 namespace TokenData {
 
-using Operator = const Data::Operator*;
+using Operator = const Operator*;
 
-using UnaryFun = const Data::UnaryFun*;
-using BinaryFun = const Data::BinaryFun*;
+using UnaryFun = const UnaryFun*;
+using BinaryFun = const BinaryFun*;
 
-using Value = Data::Value;
+using Value = double;
 
-using Constant = const Data::Value*;
+using Constant = const Constant*;
 
-using Measure = const Data::Measure*;
+using Measure = const Measure*;
 
 struct OpenParen {};
 struct CloseParen {};

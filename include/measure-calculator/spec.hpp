@@ -40,20 +40,23 @@ struct Spec {
     friend struct Detail::Lexer;
     friend struct Detail::Parser;
 
-    Data::Container<Data::Operator> op_specs;
+    std::unordered_map<std::string_view, Operator> op_specs;
 
-    Data::Container<Data::Identifier> identifier_specs;
+    std::unordered_map<std::string_view, Identifier> identifier_specs;
 
     std::vector<std::string_view> measure_names;
 };
 
-struct SpecBuilder {
-    Data::Container<Data::UnaryOp> unary_ops;
-    Data::Container<Data::BinaryOp> binary_ops;
+template<class T>
+using SpecFor = std::vector<std::pair<std::string_view, T>>;
 
-    Data::Container<Data::UnaryFun> unary_funs;
-    Data::Container<Data::BinaryFun> binary_funs;
-    Data::Container<Data::Value> constants;
+struct SpecBuilder {
+    SpecFor<UnaryOp> unary_ops;
+    SpecFor<BinaryOp> binary_ops;
+
+    SpecFor<UnaryFun> unary_funs;
+    SpecFor<BinaryFun> binary_funs;
+    SpecFor<Constant> constants;
 
     std::vector<MeasureSpec> measures;
 
@@ -82,11 +85,9 @@ struct SpecBuilder {
                 return Error::InvalidOperatorName;
             }
 
-            auto& op = result.op_specs[name];
-            if (op.unary) {
+            if (!result.op_specs.emplace(name, Operator{.unary = std::move(spec)}).second) {
                 return Error::DuplicateOperator;
             }
-            op.unary = std::move(spec);
         }
 
         for (auto& [name, spec] : binary_ops) {
@@ -108,7 +109,7 @@ struct SpecBuilder {
                     return Error::InvalidOperatorName;
                 }
 
-                auto inserted = result.identifier_specs.emplace(unit_name, Data::Measure{
+                auto inserted = result.identifier_specs.emplace(unit_name, Measure{
                                                        .id = result.measure_names.size(),
                                                        .multiplier = multiplier,
                                                    }).second;

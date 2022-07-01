@@ -3,8 +3,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "calc-cpp/calc-cpp.hpp"
-#include "calc-cpp/defaults.hpp"
+#include "measure-calculator/measure-calculator.hpp"
+#include "measure-calculator/defaults.hpp"
 
 using namespace Calc;
 
@@ -38,6 +38,12 @@ struct Asserter {
                  WrapForCheck(no_whitespace_expected.value_or(expected)));
     }
 };
+
+template<class T>
+auto operator+(T left, T right) {
+    left.insert(left.end(), std::move_iterator(right.begin()), std::move_iterator(right.end()));
+    return left;
+}
 
 const SpecBuilder kDefaultBuilder{
     .unary_ops = Defaults::kNegateUnaryOp,
@@ -194,7 +200,7 @@ TEST_CASE("Constants") {
     Asserter assertion = SpecBuilder{
         .constants =
             Defaults::kBasicConstants +
-            Data::Container<double>{
+            SpecFor<Constant>{
                 {"I", 1.}, {"II", 2.}, {"III", 3.}, {"IV", 4.}, {"V", 5}, {"MCMLXXXIV", 1984.}},
     };
 

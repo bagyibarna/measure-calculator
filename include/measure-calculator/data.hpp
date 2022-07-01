@@ -8,8 +8,6 @@
 
 namespace Calc {
 
-namespace Data {
-
 struct UnaryOp {
     std::function<double(double)> func;
 
@@ -40,24 +38,13 @@ struct Fun {
 using UnaryFun = Fun<double(double)>;
 using BinaryFun = Fun<double(double, double)>;
 
-using Value = double;
+using Constant = double;
 
 struct Measure {
     std::size_t id = 0;
     double multiplier;
 };
 
-template <class T>
-using Container = std::unordered_map<std::string_view, T>;
-
-using Identifier = std::variant<UnaryFun, BinaryFun, Value, Measure>;
-
-} // namespace Data
-
-template <class T>
-Data::Container<T> operator+(Data::Container<T> a, const Data::Container<T>& b) {
-    a.insert(b.begin(), b.end());
-    return std::move(a);
-}
+using Identifier = std::variant<UnaryFun, BinaryFun, Constant, Measure>;
 
 } // namespace Calc

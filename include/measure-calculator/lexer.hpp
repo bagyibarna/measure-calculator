@@ -111,7 +111,7 @@ struct Lexer {
             if (auto* error = std::get_if<Error>(&result)) {
                 return *error;
             }
-            curr.data = std::get<const Data::Operator*>(result);
+            curr.data = std::get<const Operator*>(result);
             return std::nullopt;
         }
 
@@ -120,7 +120,7 @@ struct Lexer {
             if (auto* error = std::get_if<Error>(&result)) {
                 return *error;
             }
-            std::visit([this](const auto& data) { curr.data = &data; }, *std::get<const Data::Identifier*>(result));
+            std::visit([this](const auto& data) { curr.data = &data; }, *std::get<const Identifier*>(result));
             return std::nullopt;
         }
 

@@ -14,7 +14,7 @@ struct MeasureData {
 
 struct MeasuredValue {
     std::optional<MeasureData> measure;
-    Data::Value value;
+    double value;
 };
 
 namespace Detail {
@@ -99,7 +99,7 @@ struct Parser {
         return AnyMeasure{};
     }
 
-    std::optional<MeasuredValue> ParseUnaryOperator(const Data::UnaryOp& op_spec) {
+    std::optional<MeasuredValue> ParseUnaryOperator(const UnaryOp& op_spec) {
         Step();
         auto inner = ParseExpression(op_spec.precedence);
         if (!inner) {

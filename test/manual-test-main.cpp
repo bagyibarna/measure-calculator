@@ -1,5 +1,5 @@
-#include "calc-cpp/calc-cpp.hpp"
-#include "calc-cpp/defaults.hpp"
+#include "measure-calculator/measure-calculator.hpp"
+#include "measure-calculator/defaults.hpp"
 
 #include <iostream>
 

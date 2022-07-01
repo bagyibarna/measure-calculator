@@ -1,28 +1,25 @@
 cmake_minimum_required(VERSION 3.20.0)
-project(calc-cpp)
+project(measure-calculator)
 
-if (NOT DEFINED CALC_DEVELOPMENT)
+if (NOT DEFINED MEASURE_CALCULATOR_DEV)
 	if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-		set(CALC_DEVELOPMENT ON)
+		set(MEASURE_CALCULATOR_DEV ON)
 	else()
-		set(CALC_DEVELOPMENT OFF)
+		set(MEASURE_CALCULATOR_DEV OFF)
 	endif()
 endif()
+message("MEASURE_CALCULATOR_DEV: ${MEASURE_CALCULATOR_DEV}")
 
 # add header only library
-if (CALC_DEVELOPMENT)
-	file(GLOB_RECURSE CALC_CPP_SOURCE_FILES CONFIGURE_DEPENDS include/*.hpp)
+if (MEASURE_CALCULATOR_DEV)
+	file(GLOB_RECURSE MEASURE_CALCULATOR_DEV_CPP_SOURCE_FILES CONFIGURE_DEPENDS include/*.hpp)
 endif()
 
-add_library(calc-cpp INTERFACE ${CALC_CPP_SOURCE_FILES})
-target_include_directories(calc-cpp INTERFACE include/)
-if (CALC_DEVELOPMENT)
-	set_property(TARGET calc-cpp PROPERTY CXX_STANDARD 20)
-endif()
+add_library(measure-calculator INTERFACE ${MEASURE_CALCULATOR_DEV_CPP_SOURCE_FILES})
+target_include_directories(measure-calculator INTERFACE include/)
 
 add_subdirectory(3pp)
-
-if(CALC_DEVELOPMENT)
+if(MEASURE_CALCULATOR_DEV)
 	include(CTest)
 	enable_testing()
 
