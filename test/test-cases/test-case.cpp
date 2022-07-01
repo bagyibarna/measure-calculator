@@ -66,22 +66,22 @@ TEST_CASE("Spec Failure Modes") {
                                                    .unaryOps =
                                                        {
                                                            {"alma", {.func = dummyUnaryFunc}},
-                                                       },
+                                                       }
                                                });
 
         buildsTo(SBError::InvalidOperatorName, {
                                                    .binaryOps =
                                                        {
                                                            {"alma", {.func = dummyBinaryFunc}},
-                                                       },
-                                               });
+                                                       }
+        });
 
         buildsTo(SBError::InvalidIdentifierName, {
                                                      .measures =
                                                          {
                                                              {"wat", {{"1", 1}}},
-                                                         },
-                                                 });
+                                                         }
+        });
 
         buildsTo(SBError::InvalidIdentifierName,
                  {.unaryFuns = {{"min(", {.func = dummyUnaryFunc}}}});
@@ -97,25 +97,25 @@ TEST_CASE("Spec Failure Modes") {
                                                      {
                                                          {"+", {.func = dummyUnaryFunc}},
                                                          {"+", {.func = dummyUnaryFunc}},
-                                                     },
+                                                     }
                                              });
         buildsTo(SBError::DuplicateOperator, {
                                                  .binaryOps =
                                                      {
                                                          {"*", {.func = dummyBinaryFunc}},
                                                          {"*", {.func = dummyBinaryFunc}},
-                                                     },
+                                                     }
                                              });
         buildsTo(SBError::DuplicateOperator, {
                                                  .unaryOps =
                                                      {
                                                          {"*", {.func = dummyUnaryFunc}},
-                                                     },
+                                                     }
                                                  .binaryOps =
                                                      {
                                                          {"*", {.func = dummyBinaryFunc}},
                                                          {"*", {.func = dummyBinaryFunc}},
-                                                     },
+                                                     }
                                              });
 
         buildsTo(SBError::DuplicateIdentifier, {
@@ -123,13 +123,13 @@ TEST_CASE("Spec Failure Modes") {
                                                        {
                                                            {"name", {{"alma", 1}}},
                                                            {"name", {{"alma", 2}}},
-                                                       },
+                                                       }
                                                });
 
         buildsTo(SBError::DuplicateIdentifier, {.measures =
                                                     {
                                                         {"name", {{"alma", 1}}},
-                                                    },
+                                                    }
                                                 .unaryFuns = {{"alma", {.func = dummyUnaryFunc}}}});
 
         buildsTo(SBError::DuplicateIdentifier,
@@ -141,14 +141,14 @@ TEST_CASE("Spec Failure Modes") {
                                               .measures =
                                                   {
                                                       {"name", {{"alma", 0}}},
-                                                  },
+                                                  }
                                           });
 
         buildsTo(SBError::NegativeMultiplier, {
                                                   .measures =
                                                       {
                                                           {"name", {{"alma", -1}}},
-                                                      },
+                                                      }
                                               });
     }
 }
@@ -290,7 +290,7 @@ TEST_CASE("Numbers") {
 
     SUBCASE("Failure Modes") {
         assertion("1e1000000",
-                  Error{.invalidRange = {0, 9}, .kind = Error::Kind::ConstantTooLarge});
+                  Error{.kind = Error::Kind::ConstantTooLarge, .invalidRange = {0, 9}});
     }
 }
 
@@ -315,7 +315,7 @@ TEST_CASE("Constants") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("asd", Error{.invalidRange = {0, 3}, .kind = Error::Kind::UnknownIdentifier});
+        assertion("asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {0, 3}});
     }
 }
 
@@ -368,9 +368,9 @@ TEST_CASE("Expression Evaluation Order") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 @", Error{.invalidRange = {3, 3}, .kind = Error::Kind::ValueExpected},
-                  {Error{.invalidRange = {2, 2}, .kind = Error::Kind::ValueExpected}});
-        assertion("@ 1", Error{.invalidRange = {0, 1}, .kind = Error::Kind::ValueExpected});
+        assertion("1 @", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {3, 3}},
+                  {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {2, 2}}});
+        assertion("@ 1", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {0, 1}});
     }
 }
 
