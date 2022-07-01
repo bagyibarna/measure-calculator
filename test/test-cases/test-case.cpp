@@ -62,26 +62,14 @@ TEST_CASE("Spec Failure Modes") {
     const auto dummyBinaryFunc = [](double d, double) { return d; };
 
     SUBCASE("Invalid Characters") {
-        buildsTo(SBError::InvalidOperatorName, {
-                                                   .unaryOps =
-                                                       {
-                                                           {"alma", {.func = dummyUnaryFunc}},
-                                                       }
-                                               });
+        buildsTo(SBError::InvalidOperatorName, {.unaryOps = {{"alma", {.func = dummyUnaryFunc}}
 
-        buildsTo(SBError::InvalidOperatorName, {
-                                                   .binaryOps =
-                                                       {
-                                                           {"alma", {.func = dummyBinaryFunc}},
-                                                       }
-        });
+                                                }});
 
-        buildsTo(SBError::InvalidIdentifierName, {
-                                                     .measures =
-                                                         {
-                                                             {"wat", {{"1", 1}}},
-                                                         }
-        });
+        buildsTo(SBError::InvalidOperatorName,
+                 {.binaryOps = {{"alma", {.func = dummyBinaryFunc}}}});
+
+        buildsTo(SBError::InvalidIdentifierName, {.measures = {{"wat", {{"1", 1}}}}});
 
         buildsTo(SBError::InvalidIdentifierName,
                  {.unaryFuns = {{"min(", {.func = dummyUnaryFunc}}}});
@@ -92,44 +80,18 @@ TEST_CASE("Spec Failure Modes") {
     }
 
     SUBCASE("Duplicates") {
-        buildsTo(SBError::DuplicateOperator, {
-                                                 .unaryOps =
-                                                     {
-                                                         {"+", {.func = dummyUnaryFunc}},
-                                                         {"+", {.func = dummyUnaryFunc}},
-                                                     }
-                                             });
-        buildsTo(SBError::DuplicateOperator, {
-                                                 .binaryOps =
-                                                     {
-                                                         {"*", {.func = dummyBinaryFunc}},
-                                                         {"*", {.func = dummyBinaryFunc}},
-                                                     }
-                                             });
-        buildsTo(SBError::DuplicateOperator, {
-                                                 .unaryOps =
-                                                     {
-                                                         {"*", {.func = dummyUnaryFunc}},
-                                                     }
-                                                 .binaryOps =
-                                                     {
-                                                         {"*", {.func = dummyBinaryFunc}},
-                                                         {"*", {.func = dummyBinaryFunc}},
-                                                     }
-                                             });
+        buildsTo(SBError::DuplicateOperator,
+                 {.unaryOps = {{"+", {.func = dummyUnaryFunc}}, {"+", {.func = dummyUnaryFunc}}}});
+        buildsTo(SBError::DuplicateOperator, {.binaryOps = {{"*", {.func = dummyBinaryFunc}},
+                                                            {"*", {.func = dummyBinaryFunc}}}});
+        buildsTo(SBError::DuplicateOperator, {.unaryOps = {{"*", {.func = dummyUnaryFunc}}},
+                                              .binaryOps = {{"*", {.func = dummyBinaryFunc}},
+                                                            {"*", {.func = dummyBinaryFunc}}}});
 
-        buildsTo(SBError::DuplicateIdentifier, {
-                                                   .measures =
-                                                       {
-                                                           {"name", {{"alma", 1}}},
-                                                           {"name", {{"alma", 2}}},
-                                                       }
-                                               });
+        buildsTo(SBError::DuplicateIdentifier,
+                 {.measures = {{"name", {{"alma", 1}}}, {"name", {{"alma", 2}}}}});
 
-        buildsTo(SBError::DuplicateIdentifier, {.measures =
-                                                    {
-                                                        {"name", {{"alma", 1}}},
-                                                    }
+        buildsTo(SBError::DuplicateIdentifier, {.measures = {{"name", {{"alma", 1}}}},
                                                 .unaryFuns = {{"alma", {.func = dummyUnaryFunc}}}});
 
         buildsTo(SBError::DuplicateIdentifier,
@@ -137,19 +99,9 @@ TEST_CASE("Spec Failure Modes") {
     }
 
     SUBCASE("Invalid Measures") {
-        buildsTo(SBError::ZeroMultiplier, {
-                                              .measures =
-                                                  {
-                                                      {"name", {{"alma", 0}}},
-                                                  }
-                                          });
+        buildsTo(SBError::ZeroMultiplier, {.measures = {{"name", {{"alma", 0}}}}});
 
-        buildsTo(SBError::NegativeMultiplier, {
-                                                  .measures =
-                                                      {
-                                                          {"name", {{"alma", -1}}},
-                                                      }
-                                              });
+        buildsTo(SBError::NegativeMultiplier, {.measures = {{"name", {{"alma", -1}}}}});
     }
 }
 
