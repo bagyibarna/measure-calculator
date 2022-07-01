@@ -70,7 +70,7 @@ struct SpecBuilder {
 
         DuplicateOperator,
         DuplicateIdentifier,
-        
+
         ZeroMultiplier,
         NegativeMultiplier
     };
@@ -167,5 +167,18 @@ struct SpecBuilder {
         return result;
     }
 };
+
+template <class FirstContainer, class... Containers>
+auto SpecUnion(FirstContainer firstContainer, Containers... containers) {
+    const auto unionOne = [&](auto& container) {
+        firstContainer.insert(firstContainer.end(), std::move_iterator(container.begin()),
+                              std::move_iterator(container.end()));
+        return true;
+    };
+
+    (unionOne(containers) && ... && true);
+
+    return firstContainer;
+}
 
 } // namespace Calc

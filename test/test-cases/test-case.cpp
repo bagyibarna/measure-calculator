@@ -3,8 +3,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "measure-calculator/measure-calculator.hpp"
 #include "measure-calculator/defaults.hpp"
+#include "measure-calculator/measure-calculator.hpp"
 
 using namespace Calc;
 
@@ -22,34 +22,28 @@ struct Asserter {
 
     template <class T>
     void operator()(std::string_view str, T expected,
-                    std::optional<T> no_whitespace_expected = std::nullopt) const {
+                    std::optional<T> noWhitespaceExpected = std::nullopt) const {
         using PureT = std::remove_cvref_t<T>;
         auto result = Evaluate(spec, str);
         CHECK_UNARY(std::holds_alternative<PureT>(result));
         CHECK_EQ(std::get<PureT>(result), WrapForCheck(expected));
 
-        std::string no_whitespace(str.begin(), str.end());
-        no_whitespace.erase(std::remove_if(no_whitespace.begin(), no_whitespace.end(), ::isspace),
-                            no_whitespace.end());
+        std::string noWhitespace(str.begin(), str.end());
+        noWhitespace.erase(std::remove_if(noWhitespace.begin(), noWhitespace.end(), ::isspace),
+                           noWhitespace.end());
 
-        auto no_whitespace_result = Evaluate(spec, no_whitespace);
-        CHECK_UNARY(std::holds_alternative<PureT>(no_whitespace_result));
-        CHECK_EQ(std::get<PureT>(no_whitespace_result),
-                 WrapForCheck(no_whitespace_expected.value_or(expected)));
+        auto noWhitespaceResult = Evaluate(spec, noWhitespace);
+        CHECK_UNARY(std::holds_alternative<PureT>(noWhitespaceResult));
+        CHECK_EQ(std::get<PureT>(noWhitespaceResult),
+                 WrapForCheck(noWhitespaceExpected.value_or(expected)));
     }
 };
-
-template<class T>
-auto operator+(T left, T right) {
-    left.insert(left.end(), std::move_iterator(right.begin()), std::move_iterator(right.end()));
-    return left;
-}
 
 const SpecBuilder kDefaultBuilder{
     .unaryOps = Defaults::kNegateUnaryOp,
     .binaryOps = Defaults::kArithmeticBinaryOps,
-    .unaryFuns = Defaults::kBasicUnaryFuns + Defaults::kExponentialUnaryFuns +
-                  Defaults::kTrigonometricUnaryFuns,
+    .unaryFuns = SpecUnion(Defaults::kBasicUnaryFuns, Defaults::kExponentialUnaryFuns,
+                           Defaults::kTrigonometricUnaryFuns),
     .binaryFuns = Defaults::kBasicBinaryFuns,
     .constants = Defaults::kBasicConstants,
     .measures = {Defaults::kLinearMeasure},
@@ -64,111 +58,98 @@ TEST_CASE("Spec Failure Modes") {
         CHECK_EQ(std::get<SBError>(result), error);
     };
 
-    const auto dummyUnaryFunc = [](double d) {return d;};
-    const auto dummyBinaryFunc = [](double d,double) {return d;};
+    const auto dummyUnaryFunc = [](double d) { return d; };
+    const auto dummyBinaryFunc = [](double d, double) { return d; };
 
-    SUBCASE ("Invalid Characters") {
+    SUBCASE("Invalid Characters") {
         buildsTo(SBError::InvalidOperatorName, {
-            .unaryOps = {
-                {"alma", {.func = dummyUnaryFunc}},
-            },
-        });
+                                                   .unaryOps =
+                                                       {
+                                                           {"alma", {.func = dummyUnaryFunc}},
+                                                       },
+                                               });
 
         buildsTo(SBError::InvalidOperatorName, {
-            .binaryOps = {
-                {"alma", {.func = dummyBinaryFunc}},
-            },
-        });
+                                                   .binaryOps =
+                                                       {
+                                                           {"alma", {.func = dummyBinaryFunc}},
+                                                       },
+                                               });
 
         buildsTo(SBError::InvalidIdentifierName, {
-            .measures = {
-                {"wat", {{"1", 1}}},
-            },
-        });
+                                                     .measures =
+                                                         {
+                                                             {"wat", {{"1", 1}}},
+                                                         },
+                                                 });
 
-        buildsTo(SBError::InvalidIdentifierName, {
-            .unaryFuns = {
-                {"min(", {.func = dummyUnaryFunc}}
-            }
-        });
-        buildsTo(SBError::InvalidIdentifierName, {
-            .binaryFuns = {
-                {"*", {.func = dummyBinaryFunc}}
-            }
-        });
-        buildsTo(SBError::InvalidIdentifierName, {
-            .constants = {
-                {"0", 0}
-            }
-        });
-        buildsTo(SBError::InvalidIdentifierName, {
-            .constants = {
-                {" ", 0}
-            }
-        });
+        buildsTo(SBError::InvalidIdentifierName,
+                 {.unaryFuns = {{"min(", {.func = dummyUnaryFunc}}}});
+        buildsTo(SBError::InvalidIdentifierName,
+                 {.binaryFuns = {{"*", {.func = dummyBinaryFunc}}}});
+        buildsTo(SBError::InvalidIdentifierName, {.constants = {{"0", 0}}});
+        buildsTo(SBError::InvalidIdentifierName, {.constants = {{" ", 0}}});
     }
 
     SUBCASE("Duplicates") {
         buildsTo(SBError::DuplicateOperator, {
-            .unaryOps = {
-                {"+", {.func = dummyUnaryFunc}},
-                {"+", {.func = dummyUnaryFunc}},
-            },
-        });
+                                                 .unaryOps =
+                                                     {
+                                                         {"+", {.func = dummyUnaryFunc}},
+                                                         {"+", {.func = dummyUnaryFunc}},
+                                                     },
+                                             });
         buildsTo(SBError::DuplicateOperator, {
-            .binaryOps = {
-                {"*", {.func = dummyBinaryFunc}},
-                {"*", {.func = dummyBinaryFunc}},
-            },
-        });
+                                                 .binaryOps =
+                                                     {
+                                                         {"*", {.func = dummyBinaryFunc}},
+                                                         {"*", {.func = dummyBinaryFunc}},
+                                                     },
+                                             });
         buildsTo(SBError::DuplicateOperator, {
-            .unaryOps = {
-                {"*", {.func = dummyUnaryFunc}},
-            },
-            .binaryOps = {
-                {"*", {.func = dummyBinaryFunc}},
-                {"*", {.func = dummyBinaryFunc}},
-            },
-        });
+                                                 .unaryOps =
+                                                     {
+                                                         {"*", {.func = dummyUnaryFunc}},
+                                                     },
+                                                 .binaryOps =
+                                                     {
+                                                         {"*", {.func = dummyBinaryFunc}},
+                                                         {"*", {.func = dummyBinaryFunc}},
+                                                     },
+                                             });
 
         buildsTo(SBError::DuplicateIdentifier, {
-            .measures = {
-                {"name", {{"alma", 1}}},
-                {"name", {{"alma", 2}}},
-            },
-        });
+                                                   .measures =
+                                                       {
+                                                           {"name", {{"alma", 1}}},
+                                                           {"name", {{"alma", 2}}},
+                                                       },
+                                               });
 
-        buildsTo(SBError::DuplicateIdentifier, {
-            .measures = {
-                {"name", {{"alma", 1}}},
-            },
-            .unaryFuns = {
-                {"alma", {.func = dummyUnaryFunc}}
-            }
-        });
+        buildsTo(SBError::DuplicateIdentifier, {.measures =
+                                                    {
+                                                        {"name", {{"alma", 1}}},
+                                                    },
+                                                .unaryFuns = {{"alma", {.func = dummyUnaryFunc}}}});
 
-        buildsTo(SBError::DuplicateIdentifier, {
-            .unaryFuns = {
-                {"name", {.func = dummyUnaryFunc}}
-            },
-            .constants = {
-                {"name", 12}
-            }
-        });
+        buildsTo(SBError::DuplicateIdentifier,
+                 {.unaryFuns = {{"name", {.func = dummyUnaryFunc}}}, .constants = {{"name", 12}}});
     }
 
     SUBCASE("Invalid Measures") {
         buildsTo(SBError::ZeroMultiplier, {
-            .measures = {
-                {"name", {{"alma", 0}}},
-            },
-        });
+                                              .measures =
+                                                  {
+                                                      {"name", {{"alma", 0}}},
+                                                  },
+                                          });
 
         buildsTo(SBError::NegativeMultiplier, {
-            .measures = {
-                {"name", {{"alma", -1}}},
-            },
-        });
+                                                  .measures =
+                                                      {
+                                                          {"name", {{"alma", -1}}},
+                                                      },
+                                              });
     }
 }
 
@@ -315,10 +296,10 @@ TEST_CASE("Numbers") {
 
 TEST_CASE("Constants") {
     Asserter assertion = SpecBuilder{
-        .constants =
-            Defaults::kBasicConstants +
+        .constants = SpecUnion(
+            Defaults::kBasicConstants,
             SpecFor<Constant>{
-                {"I", 1.}, {"II", 2.}, {"III", 3.}, {"IV", 4.}, {"V", 5}, {"MCMLXXXIV", 1984.}},
+                {"I", 1.}, {"II", 2.}, {"III", 3.}, {"IV", 4.}, {"V", 5}, {"MCMLXXXIV", 1984.}}),
     };
 
     SUBCASE("Constant Usage") {
@@ -342,7 +323,7 @@ TEST_CASE("Operator Precedence") {
     Asserter assertion = SpecBuilder{
         .unaryOps = {{"~", {.func = [](auto) { return 20.; }, .precedence = 2}}},
         .binaryOps = {{"@", {.func = [](auto, auto) { return 10.; }, .precedence = 1}},
-                       {"#", {.func = [](auto, auto) { return 30.; }, .precedence = 3}}},
+                      {"#", {.func = [](auto, auto) { return 30.; }, .precedence = 3}}},
     };
 
     assertion("0 @ 0", 10.);
@@ -462,6 +443,7 @@ TEST_CASE("Measures") {
         .unaryFuns = Defaults::kBasicUnaryFuns,
         .binaryFuns = Defaults::kBasicBinaryFuns,
         .measures = {Defaults::kLinearMeasure,
+                     Defaults::kAngularMeasure,
                      {"time",
                       {
                           {"msec", 1e-3},
@@ -477,6 +459,14 @@ TEST_CASE("Measures") {
         assertion("1 dm", 1e-1);
         assertion("1 cm", 1e-2);
         assertion("1 mm", 1e-3);
+
+        assertion("1 turn", 2 * Defaults::pi);
+        assertion("1 rad", 1.);
+        assertion("1 º", Defaults::pi / 180.);
+        assertion("1 °", Defaults::pi / 180.);
+        assertion("1 '", Defaults::pi / (180. * 60.));
+        assertion("1 ''", Defaults::pi / (180. * 60. * 60));
+        assertion("1 \"", Defaults::pi / (180. * 60. * 60));
 
         assertion("1 msec", 1e-3);
         assertion("1 sec", 1.);
@@ -500,8 +490,20 @@ TEST_CASE("Measures") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 km + 1 sec", Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {9, 12}, .secondaryInvalidRange = {2, 4}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {5, 8}, .secondaryInvalidRange = {1, 3}}});
-        assertion("max(1 km, 1 sec)", Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {12, 15}, .secondaryInvalidRange = {6, 8}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {9, 12}, .secondaryInvalidRange = {5, 7}}});
+        assertion("1 km + 1 sec",
+                  Error{.kind = Error::Kind::MeasureMismatch,
+                        .invalidRange = {9, 12},
+                        .secondaryInvalidRange = {2, 4}},
+                  {Error{.kind = Error::Kind::MeasureMismatch,
+                         .invalidRange = {5, 8},
+                         .secondaryInvalidRange = {1, 3}}});
+        assertion("max(1 km, 1 sec)",
+                  Error{.kind = Error::Kind::MeasureMismatch,
+                        .invalidRange = {12, 15},
+                        .secondaryInvalidRange = {6, 8}},
+                  {Error{.kind = Error::Kind::MeasureMismatch,
+                         .invalidRange = {9, 12},
+                         .secondaryInvalidRange = {5, 7}}});
     }
 }
 
@@ -606,22 +608,23 @@ TEST_CASE("Arithmetic Examples") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 / 0", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
-        assertion("1 / 0 + 3", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
-        assertion("0 / 0", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
-        assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
-
+        assertion("1 / 0", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}},
+                  {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
+        assertion("1 / 0 + 3", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}},
+                  {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
+        assertion("0 / 0", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}},
+                  {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
+        assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}},
+                  {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
     }
 }
 
 TEST_CASE("Posfix Binary ShortHand") {
-    Asserter assertion = SpecBuilder{
-        .unaryOps = Defaults::kNegateUnaryOp,
-        .binaryOps = Defaults::kArithmeticBinaryOps,
-        .unaryFuns = Defaults::kBasicUnaryFuns,
-        .binaryFuns = Defaults::kBasicBinaryFuns,
-        .usePostfixShorthand = true
-    };
+    Asserter assertion = SpecBuilder{.unaryOps = Defaults::kNegateUnaryOp,
+                                     .binaryOps = Defaults::kArithmeticBinaryOps,
+                                     .unaryFuns = Defaults::kBasicUnaryFuns,
+                                     .binaryFuns = Defaults::kBasicBinaryFuns,
+                                     .usePostfixShorthand = true};
 
     SUBCASE("On Raw Values") {
         assertion("3 +", 3. + 3.);
@@ -636,7 +639,9 @@ TEST_CASE("Posfix Binary ShortHand") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("3 - asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {4, 7}}, {Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {2, 5}}});
-        assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {4, 5}}, {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {3, 4}}});
+        assertion("3 - asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {4, 7}},
+                  {Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {2, 5}}});
+        assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {4, 5}},
+                  {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {3, 4}}});
     }
 }

@@ -61,9 +61,12 @@ const SpecFor<BinaryFun> kBasicBinaryFuns{
     {"pow", BinaryFun{.func = Binary(std::pow)}},
 };
 
+constexpr double pi = 3.14159265358979323846;
+constexpr double e = 2.71828182845904523536;
+
 const SpecFor<Constant> kBasicConstants{
-    {"pi", 3.14159265358979323846},
-    {"e", 2.71828182845904523536},
+    {"pi", pi},
+    {"e", e},
 };
 
 const MeasureSpec kLinearMeasure{"length",
@@ -76,6 +79,15 @@ const MeasureSpec kLinearMeasure{"length",
                                      {"ft", 0.3048},
                                      {"in", 0.0254},
                                  }};
+
+const MeasureSpec kAngularMeasure{"angular",
+                                  {{"turn", 2. * pi},
+                                   {"rad", 1.},
+                                   {"º", pi / 180.},
+                                   {"°", pi / 180.},
+                                   {"'", pi / (180. * 60.)},
+                                   {"''", pi / (180. * 60. * 60.)},
+                                   {"\"", pi / (180. * 60. * 60.)}}};
 
 } // namespace Defaults
 
