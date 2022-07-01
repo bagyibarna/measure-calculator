@@ -286,7 +286,6 @@ struct Parser {
             std::optional<MeasureData> commonMeasure;
             auto measure = ResolveMeasure(rootValue, right);
             if (std::holds_alternative<NoMeasure>(measure)) {
-                auto curr_pos = lexer.totalString.size() - lexer.unanalyzed.size();
                 OnError({
                     .kind = Error::Kind::MeasureMismatch,
                     .invalidRange = right->measure->sourceLocation,

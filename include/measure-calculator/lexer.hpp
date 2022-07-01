@@ -55,7 +55,7 @@ struct Lexer {
                                       [take_while](char c) { return !take_while(c); });
 
         for (auto size = end - begin; size > 0; --size) {
-            std::string_view atom(begin, size);
+            std::string_view atom(&*begin, size);
             if (auto found = lookupSource.find(atom); found != lookupSource.end()) {
                 curr.str = atom;
                 unanalyzed.remove_prefix(size);
