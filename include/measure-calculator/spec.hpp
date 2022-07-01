@@ -133,7 +133,7 @@ struct SpecBuilder {
             }
         }
 
-        auto add_identifiers = [&result](auto& source) {
+        auto add_identifiers = [&result](auto& source) -> std::optional<Error> {
             for (auto& [name, spec] : source) {
                 if (!ValidIdentifier(name)) {
                     return Error::InvalidOperatorName;
@@ -143,11 +143,19 @@ struct SpecBuilder {
                     return Error::DuplicateIdentifier;
                 }
             }
+
+            return std::nullopt;
         };
 
-        add_identifiers(unary_funs);
-        add_identifiers(binary_funs);
-        add_identifiers(constants);
+        if (auto err = add_identifiers(unary_funs)) {
+            return *err;
+        }
+        if (auto err = add_identifiers(binary_funs)) {
+            return *err;
+        }
+        if (auto err = add_identifiers(constants)) {
+            return *err;
+        }
 
         result.usePostfixShorthand = usePostfixShorthand;
 

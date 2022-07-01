@@ -343,12 +343,13 @@ TEST_CASE("Measures") {
         .unary_ops = Defaults::kNegateUnaryOp,
         .binary_ops = Defaults::kArithmeticBinaryOps,
         .unary_funs = Defaults::kBasicUnaryFuns,
+        .binary_funs = Defaults::kBasicBinaryFuns,
         .measures = {Defaults::kLinearMeasure,
                      {"time",
                       {
                           {"msec", 1e-3},
                           {"sec", 1.},
-                          {"min", 60.},
+                          // min would collide with min(...)
                           {"h", 60 * 60},
                       }}},
     };
@@ -362,7 +363,6 @@ TEST_CASE("Measures") {
 
         assertion("1 msec", 1e-3);
         assertion("1 sec", 1.);
-        assertion("1 min", 60.);
         assertion("1 h", 60. * 60.);
 
         assertion("(1 + 1) km", 2e3);
@@ -380,6 +380,11 @@ TEST_CASE("Measures") {
         assertion("1 + 1 km", 1001.);
 
         assertion("1 km * 1 km", 1e6);
+    }
+
+    SUBCASE("Failure Modes") {
+        assertion("1 km + 1 sec", Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {9, 12}, .secondary_invalid_range = {2, 4}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {5, 8}, .secondary_invalid_range = {1, 3}}});
+        assertion("max(1 km, 1 sec)", Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {12, 15}, .secondary_invalid_range = {6, 8}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {9, 12}, .secondary_invalid_range = {5, 7}}});
     }
 }
 
