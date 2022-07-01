@@ -3,6 +3,12 @@ name: UnitTest
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - '.clang-format'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'README.md'
+
   pull_request:
     branches: [ "master" ]
 
