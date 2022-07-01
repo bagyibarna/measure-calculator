@@ -482,4 +482,39 @@ TEST_CASE("Arithmetic Examples") {
 
         assertion("-(2) * (-3) - -(-2  / -3)", -(2.) * (-3.) - -(-2. / -3.));
     }
+
+    SUBCASE("Failure Modes") {
+        assertion("1 / 0", Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {1, 2}}});
+        assertion("1 / 0 + 3", Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {1, 2}}});
+        assertion("0 / 0", Error{.kind = Error::Kind::NotANumber, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalid_range = {1, 2}}});
+        assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalid_range = {1, 2}}});
+
+    }
+}
+
+TEST_CASE("Posfix Binary ShortHand") {
+    Asserter assertion = SpecBuilder{
+        .unary_ops = Defaults::kNegateUnaryOp,
+        .binary_ops = Defaults::kArithmeticBinaryOps,
+        .unary_funs = Defaults::kBasicUnaryFuns,
+        .binary_funs = Defaults::kBasicBinaryFuns,
+        .usePostfixShorthand = true
+    };
+
+    SUBCASE("On Raw Values") {
+        assertion("3 +", 3. + 3.);
+        assertion("3 *", 3. * 3.);
+        assertion("3 /", 3. / 3.);
+    }
+
+    SUBCASE("On Expressions") {
+        assertion("abs(-3) +", 3. + 3.);
+        assertion("min(3, 5) *", 3. * 3.);
+        assertion("(1 + 2) +", 3. + 3.);
+    }
+
+    SUBCASE("Failure Modes") {
+        assertion("3 - asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalid_range = {4, 7}}, {Error{.kind = Error::Kind::UnknownIdentifier, .invalid_range = {2, 5}}});
+        assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalid_range = {4, 5}}, {Error{.kind = Error::Kind::ValueExpected, .invalid_range = {3, 4}}});
+    }
 }

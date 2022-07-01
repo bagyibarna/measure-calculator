@@ -262,6 +262,8 @@ struct Parser {
                 break;
             }
 
+            auto binary_end = lexer.total_string.size() - lexer.unanalyzed.size();
+            auto binary_start = binary_end - lexer.curr.str.size();
             if (binary->precedence < parent_precedence) {
                 break;
             }
@@ -270,13 +272,20 @@ struct Parser {
             binary->left_associative ? binary->precedence + 1 : binary->precedence;
 
             Step();
-            auto right_expr = ParseExpression(right_prec);
-            if (!right_expr) {
+            std::optional<MeasuredValue> right;
+
+            if (spec.usePostfixShorthand && std::holds_alternative<TokenData::Eof>(lexer.curr.data)) {
+                right = root_value;
+            } else {
+                right = ParseExpression(right_prec);
+            }
+
+            if (!right) {
                 return std::nullopt;
             }
 
             std::optional<MeasureData> commonMeasure;
-            auto measure = ResolveMeasure(root_value, right_expr);
+            auto measure = ResolveMeasure(root_value, right);
             if (std::holds_alternative<NoMeasure>(measure)) {
                 auto curr_pos = lexer.total_string.size() - lexer.unanalyzed.size();
                 OnError({
@@ -290,9 +299,20 @@ struct Parser {
                 commonMeasure = *specific;
             }
 
+            auto result = binary->func(root_value->value, right->value);
+            bool isNan = std::isnan(result);
+            bool isInf = std::isinf(result);
+            if (isNan || isInf) {
+                OnError({
+                    .kind = isNan ? Error::Kind::NotANumber : Error::Kind::InfiniteValue,
+                    .invalid_range = {binary_start, binary_end}
+                });
+                return std::nullopt;
+            }
+
             root_value = MeasuredValue{
                 .measure = commonMeasure,
-                .value = binary->func(root_value->value, right_expr->value),
+                .value = result,
             };
         }
 
@@ -301,6 +321,10 @@ struct Parser {
 
     std::optional<MeasuredValue> Parse() {
         auto result = ParseExpression();
+        if (!result) {
+            return std::nullopt;
+        }
+
         if (std::holds_alternative<TokenData::Eof>(lexer.curr.data)) {
             return result;
         }

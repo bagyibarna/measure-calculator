@@ -21,6 +21,9 @@ struct Error {
 
         ValueExpected,
 
+        NotANumber,
+        InfiniteValue,
+
         MeasureMismatch,
     };
 
@@ -44,6 +47,7 @@ inline std::ostream& operator<<(std::ostream& os, const Error& error) {
         case Error::Kind::UnexpectedToken: os << "UnexpectedToken"; break;
         case Error::Kind::ValueExpected: os << "ValueExpected"; break;
         case Error::Kind::MeasureMismatch: os << "MeasureMismatch"; break;
+        case Error::Kind::NotANumber: os << "MeasureMismatch"; break;
     }
 
     os << "{" << error.invalid_range.first << ", " << error.invalid_range.second << "}";

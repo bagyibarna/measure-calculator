@@ -45,6 +45,8 @@ struct Spec {
     std::unordered_map<std::string_view, Identifier> identifier_specs;
 
     std::vector<std::string_view> measure_names;
+
+    bool usePostfixShorthand;
 };
 
 template<class T>
@@ -60,11 +62,15 @@ struct SpecBuilder {
 
     std::vector<MeasureSpec> measures;
 
+    bool usePostfixShorthand = false;
+
     enum class Error {
         InvalidOperatorName,
         InvalidIdentifierName,
         DuplicateOperator,
-        DuplicateIdentifier
+        DuplicateIdentifier,
+        ZeroMultiplier,
+        NegativeMultiplier
     };
 
     static bool ValidOp(std::string_view name) {
@@ -109,6 +115,14 @@ struct SpecBuilder {
                     return Error::InvalidOperatorName;
                 }
 
+                if (multiplier < 0.) {
+                    return Error::NegativeMultiplier;
+                }
+
+                if (multiplier < std::numeric_limits<double>::epsilon()) {
+                    return Error::ZeroMultiplier;
+                }
+
                 auto inserted = result.identifier_specs.emplace(unit_name, Measure{
                                                        .id = result.measure_names.size(),
                                                        .multiplier = multiplier,
@@ -134,6 +148,8 @@ struct SpecBuilder {
         add_identifiers(unary_funs);
         add_identifiers(binary_funs);
         add_identifiers(constants);
+
+        result.usePostfixShorthand = usePostfixShorthand;
 
         return result;
     }
