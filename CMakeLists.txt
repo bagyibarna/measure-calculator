@@ -8,17 +8,17 @@ if (NOT DEFINED MEASURE_CALCULATOR_DEV)
 		set(MEASURE_CALCULATOR_DEV OFF)
 	endif()
 endif()
-message("MEASURE_CALCULATOR_DEV: ${MEASURE_CALCULATOR_DEV}")
 
 # add header only library
 if (MEASURE_CALCULATOR_DEV)
-	file(GLOB_RECURSE MEASURE_CALCULATOR_DEV_CPP_SOURCE_FILES CONFIGURE_DEPENDS include/*.hpp)
+	file(GLOB_RECURSE MEASURE_CALCULATOR_DEV_HPP_SOURCE_FILES CONFIGURE_DEPENDS include/*.hpp)
 endif()
 
-add_library(measure-calculator INTERFACE ${MEASURE_CALCULATOR_DEV_CPP_SOURCE_FILES})
+add_library(measure-calculator INTERFACE ${MEASURE_CALCULATOR_DEV_HPP_SOURCE_FILES})
 target_include_directories(measure-calculator INTERFACE include/)
 
 add_subdirectory(3pp)
+
 if(MEASURE_CALCULATOR_DEV)
 	include(CTest)
 	enable_testing()

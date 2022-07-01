@@ -11,6 +11,13 @@ target_compile_options(test-cases PUBLIC "-fsanitize=undefined,address")
 target_link_options(test-cases PUBLIC "-fsanitize=undefined,address")
 set_property(TARGET test-cases PROPERTY CXX_STANDARD 20)
 
+find_program(CLANG_TIDY_EXE NAMES "clang-tidy" HINTS "/opt/homebrew/opt/llvm/bin/")
+if (CLANG_TIDY_EXE)
+	set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-checks=bugprone-*,clang-analyzer-*,performance-*,portability-*")
+	set_target_properties(test-cases PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+
+	message("clang-tidy found")
+endif()
 
 add_executable(test-exe "doctest-main.cpp")
 target_link_libraries(test-exe PRIVATE test-cases)

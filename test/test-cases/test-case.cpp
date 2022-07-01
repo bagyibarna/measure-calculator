@@ -1,8 +1,5 @@
 #include <doctest/doctest.h>
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 #include "measure-calculator/defaults.hpp"
 #include "measure-calculator/measure-calculator.hpp"
 
@@ -256,8 +253,8 @@ TEST_CASE("Constants") {
     };
 
     SUBCASE("Constant Usage") {
-        assertion("pi", M_PI);
-        assertion("e", M_E);
+        assertion("pi", Defaults::pi);
+        assertion("e", Defaults::e);
 
         assertion("I", 1.);
         assertion("II", 2.);
