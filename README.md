@@ -27,7 +27,7 @@
     }
 
     // use the same Spec for evaluation many times
-    auto result = Evaluate(spec, "1km + 2 * 100 m * pi");
+    auto result = Evaluate(std::get<Spec>(spec), "1 km + 2 * 100 m * pi");
     
     if (auto* error = std::get_if<Error>(result)) {
         // handle error
