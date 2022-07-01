@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    -name: Download Submodules
+    - name: Download Submodules
       run: git submodule update --init
 
     - name: Configure CMake
