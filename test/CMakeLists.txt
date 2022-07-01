@@ -1,5 +1,7 @@
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /w44062")
+else()
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror")
 endif()
 
 file(GLOB_RECURSE MEASURE_CALCULATOR_TEST_SOURCE_FILES CONFIGURE_DEPENDS test-cases/*.cpp test-cases/*.hpp)
