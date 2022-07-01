@@ -2,8 +2,8 @@
 
 #include <functional>
 #include <string_view>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 
 namespace Calc {
@@ -18,12 +18,12 @@ struct UnaryOp {
 struct BinaryOp {
     std::function<double(double, double)> func;
 
-    bool left_associative = true;
+    bool leftAssociative = true;
     bool keepsMeasure = true;
     std::size_t precedence;
 };
 
-struct Operator{
+struct Operator {
     std::optional<UnaryOp> unary;
     std::optional<BinaryOp> binary;
 };

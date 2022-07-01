@@ -40,24 +40,24 @@ struct Spec {
     friend struct Detail::Lexer;
     friend struct Detail::Parser;
 
-    std::unordered_map<std::string_view, Operator> op_specs;
+    std::unordered_map<std::string_view, Operator> opSpecs;
 
-    std::unordered_map<std::string_view, Identifier> identifier_specs;
+    std::unordered_map<std::string_view, Identifier> identifierSpecs;
 
-    std::vector<std::string_view> measure_names;
+    std::vector<std::string_view> measureNames;
 
     bool usePostfixShorthand;
 };
 
-template<class T>
+template <class T>
 using SpecFor = std::vector<std::pair<std::string_view, T>>;
 
 struct SpecBuilder {
-    SpecFor<UnaryOp> unary_ops;
-    SpecFor<BinaryOp> binary_ops;
+    SpecFor<UnaryOp> unaryOps;
+    SpecFor<BinaryOp> binaryOps;
 
-    SpecFor<UnaryFun> unary_funs;
-    SpecFor<BinaryFun> binary_funs;
+    SpecFor<UnaryFun> unaryFuns;
+    SpecFor<BinaryFun> binaryFuns;
     SpecFor<Constant> constants;
 
     std::vector<MeasureSpec> measures;
@@ -67,8 +67,10 @@ struct SpecBuilder {
     enum class Error {
         InvalidOperatorName,
         InvalidIdentifierName,
+
         DuplicateOperator,
         DuplicateIdentifier,
+        
         ZeroMultiplier,
         NegativeMultiplier
     };
@@ -86,22 +88,22 @@ struct SpecBuilder {
     std::variant<Spec, Error> Build() && {
         Spec result;
 
-        for (auto& [name, spec] : unary_ops) {
+        for (auto& [name, spec] : unaryOps) {
             if (!ValidOp(name)) {
                 return Error::InvalidOperatorName;
             }
 
-            if (!result.op_specs.emplace(name, Operator{.unary = std::move(spec)}).second) {
+            if (!result.opSpecs.emplace(name, Operator{.unary = std::move(spec)}).second) {
                 return Error::DuplicateOperator;
             }
         }
 
-        for (auto& [name, spec] : binary_ops) {
+        for (auto& [name, spec] : binaryOps) {
             if (!ValidOp(name)) {
                 return Error::InvalidOperatorName;
             }
 
-            auto& op = result.op_specs[name];
+            auto& op = result.opSpecs[name];
             if (op.binary) {
                 return Error::DuplicateOperator;
             }
@@ -109,10 +111,10 @@ struct SpecBuilder {
         }
 
         for (auto&& [name, units] : measures) {
-            result.measure_names.push_back(name);
-            for (auto& [unit_name, multiplier] : units) {
-                if (!ValidIdentifier(unit_name)) {
-                    return Error::InvalidOperatorName;
+            result.measureNames.push_back(name);
+            for (auto& [unitName, multiplier] : units) {
+                if (!ValidIdentifier(unitName)) {
+                    return Error::InvalidIdentifierName;
                 }
 
                 if (multiplier < 0.) {
@@ -123,23 +125,26 @@ struct SpecBuilder {
                     return Error::ZeroMultiplier;
                 }
 
-                auto inserted = result.identifier_specs.emplace(unit_name, Measure{
-                                                       .id = result.measure_names.size(),
-                                                       .multiplier = multiplier,
-                                                   }).second;
+                auto inserted = result.identifierSpecs
+                                    .emplace(unitName,
+                                             Measure{
+                                                 .id = result.measureNames.size(),
+                                                 .multiplier = multiplier,
+                                             })
+                                    .second;
                 if (!inserted) {
                     return Error::DuplicateIdentifier;
                 }
             }
         }
 
-        auto add_identifiers = [&result](auto& source) -> std::optional<Error> {
+        auto addIdentifiers = [&result](auto& source) -> std::optional<Error> {
             for (auto& [name, spec] : source) {
                 if (!ValidIdentifier(name)) {
-                    return Error::InvalidOperatorName;
+                    return Error::InvalidIdentifierName;
                 }
 
-                if (!result.identifier_specs.emplace(name, std::move(spec)).second) {
+                if (!result.identifierSpecs.emplace(name, std::move(spec)).second) {
                     return Error::DuplicateIdentifier;
                 }
             }
@@ -147,13 +152,13 @@ struct SpecBuilder {
             return std::nullopt;
         };
 
-        if (auto err = add_identifiers(unary_funs)) {
+        if (auto err = addIdentifiers(unaryFuns)) {
             return *err;
         }
-        if (auto err = add_identifiers(binary_funs)) {
+        if (auto err = addIdentifiers(binaryFuns)) {
             return *err;
         }
-        if (auto err = add_identifiers(constants)) {
+        if (auto err = addIdentifiers(constants)) {
             return *err;
         }
 

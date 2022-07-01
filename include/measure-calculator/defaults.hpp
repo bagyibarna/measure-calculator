@@ -29,12 +29,10 @@ const SpecFor<UnaryFun> kBasicUnaryFuns{
 };
 
 const SpecFor<UnaryFun> kExponentialUnaryFuns{
-    {"exp", UnaryFun{.func = Unary(std::exp)}},
-    {"exp2", UnaryFun{.func = Unary(std::exp2)}},
+    {"exp", UnaryFun{.func = Unary(std::exp)}},     {"exp2", UnaryFun{.func = Unary(std::exp2)}},
     {"sqrt", UnaryFun{.func = Unary(std::sqrt)}},
 
-    {"ln", UnaryFun{.func = Unary(std::log)}},
-    {"log2", UnaryFun{.func = Unary(std::log2)}},
+    {"ln", UnaryFun{.func = Unary(std::log)}},      {"log2", UnaryFun{.func = Unary(std::log2)}},
     {"log10", UnaryFun{.func = Unary(std::log10)}},
 };
 

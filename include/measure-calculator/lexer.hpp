@@ -15,7 +15,7 @@ namespace Detail {
 struct Lexer {
     const Spec& spec;
 
-    std::string_view total_string;
+    std::string_view totalString;
     std::string_view unanalyzed;
 
     Token curr;
@@ -30,9 +30,9 @@ struct Lexer {
         char* end;
         auto result = std::strtod(unanalyzed.data(), &end);
         if (result == HUGE_VAL || result == -HUGE_VAL) {
-            const auto first_invalid = total_string.size() - unanalyzed.size();
+            const auto firstInvalid = totalString.size() - unanalyzed.size();
             return Error{
-                .invalid_range = {first_invalid, end - unanalyzed.data()},
+                .invalidRange = {firstInvalid, end - unanalyzed.data()},
                 .kind = result == HUGE_VAL ? Error::Kind::ConstantTooLarge
                                            : Error::Kind::ConstantTooSmall,
             };
@@ -47,11 +47,12 @@ struct Lexer {
         return std::nullopt;
     }
 
-    template<class Container>
-    std::variant<Error, const typename Container::mapped_type*> TokenizeFromSpec(Container& lookupSource, bool(*take_while)(char), Error::Kind kind) {
+    template <class Container>
+    std::variant<Error, const typename Container::mapped_type*>
+    TokenizeFromSpec(Container& lookupSource, bool (*take_while)(char), Error::Kind kind) {
         const auto begin = unanalyzed.begin();
         const auto end = std::find_if(unanalyzed.begin(), unanalyzed.end(),
-                                                  [take_while](char c) { return !take_while(c); });
+                                      [take_while](char c) { return !take_while(c); });
 
         for (auto size = end - begin; size > 0; --size) {
             std::string_view atom(begin, size);
@@ -62,10 +63,10 @@ struct Lexer {
             }
         }
 
-        const auto start_index = total_string.size() - unanalyzed.size();
+        const auto startIndex = totalString.size() - unanalyzed.size();
         curr.data = TokenData::Error{};
         return Error{
-            .invalid_range = {start_index, start_index + (end - begin)},
+            .invalidRange = {startIndex, startIndex + (end - begin)},
             .kind = kind,
         };
     }
@@ -107,7 +108,8 @@ struct Lexer {
         }
 
         if (IsOperatorChar(unanalyzed.front())) {
-            auto result = TokenizeFromSpec(spec.op_specs, IsOperatorChar, Error::Kind::UnknownOperator);
+            auto result =
+                TokenizeFromSpec(spec.opSpecs, IsOperatorChar, Error::Kind::UnknownOperator);
             if (auto* error = std::get_if<Error>(&result)) {
                 return *error;
             }
@@ -116,19 +118,21 @@ struct Lexer {
         }
 
         if (IsIdentifierStartChar(unanalyzed.front())) {
-            auto result = TokenizeFromSpec(spec.identifier_specs, IsIdentifierChar, Error::Kind::UnknownIdentifier);
+            auto result = TokenizeFromSpec(spec.identifierSpecs, IsIdentifierChar,
+                                           Error::Kind::UnknownIdentifier);
             if (auto* error = std::get_if<Error>(&result)) {
                 return *error;
             }
-            std::visit([this](const auto& data) { curr.data = &data; }, *std::get<const Identifier*>(result));
+            std::visit([this](const auto& data) { curr.data = &data; },
+                       *std::get<const Identifier*>(result));
             return std::nullopt;
         }
 
         // unknown character
         curr.data = TokenData::Error{};
-        const auto first_invalid = total_string.size() - unanalyzed.size();
+        const auto firstInvalid = totalString.size() - unanalyzed.size();
         return Error{
-            .invalid_range = {first_invalid, first_invalid + 1},
+            .invalidRange = {firstInvalid, firstInvalid + 1},
             .kind = Error::Kind::UnknownChar,
         };
     }

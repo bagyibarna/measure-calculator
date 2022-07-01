@@ -29,8 +29,8 @@ struct Error {
 
     Kind kind;
 
-    std::pair<std::size_t, std::size_t> invalid_range;
-    std::pair<std::size_t, std::size_t> secondary_invalid_range = {0, 0};
+    std::pair<std::size_t, std::size_t> invalidRange;
+    std::pair<std::size_t, std::size_t> secondaryInvalidRange = {0, 0};
 
     std::strong_ordering operator<=>(const Error& other) const = default;
 };
@@ -47,12 +47,13 @@ inline std::ostream& operator<<(std::ostream& os, const Error& error) {
         case Error::Kind::UnexpectedToken: os << "UnexpectedToken"; break;
         case Error::Kind::ValueExpected: os << "ValueExpected"; break;
         case Error::Kind::MeasureMismatch: os << "MeasureMismatch"; break;
-        case Error::Kind::NotANumber: os << "MeasureMismatch"; break;
+        case Error::Kind::NotANumber: os << "NotANumber"; break;
+        case Error::Kind::InfiniteValue: os << "InfiniteValue"; break;
     }
 
-    os << "{" << error.invalid_range.first << ", " << error.invalid_range.second << "}";
-    os << " {" << error.secondary_invalid_range.first << ", "
-       << error.secondary_invalid_range.second << "}";
+    os << "{" << error.invalidRange.first << ", " << error.invalidRange.second << "}";
+    os << " {" << error.secondaryInvalidRange.first << ", " << error.secondaryInvalidRange.second
+       << "}";
 
     return os;
 }

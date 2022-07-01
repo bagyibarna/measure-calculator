@@ -8,7 +8,7 @@
 namespace Calc {
 
 struct MeasureData {
-    std::pair<std::size_t, std::size_t> source_location;
+    std::pair<std::size_t, std::size_t> sourceLocation;
     std::size_t id;
 };
 
@@ -20,21 +20,15 @@ struct MeasuredValue {
 namespace Detail {
 
 struct Parser {
-    Parser(const Spec& spec, std::string_view total_string)
+    Parser(const Spec& spec, std::string_view totalString)
         : spec(spec),
           lexer{
               .spec = spec,
-              .total_string = total_string,
-              .unanalyzed = total_string,
+              .totalString = totalString,
+              .unanalyzed = totalString,
               .curr = {.str = "", .data = TokenData::Error{}},
           } {
         Step();
-    }
-
-    void Step() {
-        if (auto new_error = lexer.Step()) {
-            error = *new_error;
-        }
     }
 
     const Spec& spec;
@@ -51,9 +45,15 @@ struct Parser {
     }
 
     void ErrorCurrentToken(Error::Kind kind) {
-        const auto current_end = lexer.total_string.size() - lexer.unanalyzed.size();
-        const auto current_start = current_end - lexer.curr.str.size();
-        OnError({kind, {current_start, current_end}});
+        const auto currentEnd = lexer.totalString.size() - lexer.unanalyzed.size();
+        const auto currentStart = currentEnd - lexer.curr.str.size();
+        OnError({kind, {currentStart, currentEnd}});
+    }
+
+    void Step() {
+        if (auto newError = lexer.Step()) {
+            OnError(*newError);
+        }
     }
 
     template <class T>
@@ -67,7 +67,7 @@ struct Parser {
         if (std::holds_alternative<TokenData::Eof>(lexer.curr.data)) {
             OnError({
                 .kind = Error::Kind::UnexpectedEof,
-                .invalid_range = {lexer.total_string.size(), lexer.total_string.size()},
+                .invalidRange = {lexer.totalString.size(), lexer.totalString.size()},
             });
             return false;
         }
@@ -99,16 +99,16 @@ struct Parser {
         return AnyMeasure{};
     }
 
-    std::optional<MeasuredValue> ParseUnaryOperator(const UnaryOp& op_spec) {
+    std::optional<MeasuredValue> ParseUnaryOperator(const UnaryOp& opSpec) {
         Step();
-        auto inner = ParseExpression(op_spec.precedence);
+        auto inner = ParseExpression(opSpec.precedence);
         if (!inner) {
             return std::nullopt;
         }
 
         return MeasuredValue{
-            .measure = op_spec.keepsMeasure ? inner->measure : std::nullopt,
-            .value = op_spec.func(inner->value),
+            .measure = opSpec.keepsMeasure ? inner->measure : std::nullopt,
+            .value = opSpec.func(inner->value),
         };
     }
 
@@ -142,8 +142,8 @@ struct Parser {
             }
         }
 
-        if (auto* unary_fun = std::get_if<TokenData::UnaryFun>(&lexer.curr.data)) {
-            const auto& fun_spec = **unary_fun;
+        if (auto* unaryFun = std::get_if<TokenData::UnaryFun>(&lexer.curr.data)) {
+            const auto& funSpec = **unaryFun;
             Step();
             if (!Expect<TokenData::OpenParen>()) {
                 return std::nullopt;
@@ -159,19 +159,18 @@ struct Parser {
             }
 
             return MeasuredValue{
-                .measure = fun_spec.keepsMeasure ? inner->measure : std::nullopt,
-                .value = fun_spec.func(inner->value),
+                .measure = funSpec.keepsMeasure ? inner->measure : std::nullopt,
+                .value = funSpec.func(inner->value),
             };
         }
 
-        if (auto* binary_fun = std::get_if<TokenData::BinaryFun>(&lexer.curr.data)) {
-            const auto& fun_spec = **binary_fun;
+        if (auto* binaryFun = std::get_if<TokenData::BinaryFun>(&lexer.curr.data)) {
+            const auto& funSpec = **binaryFun;
             Step();
             if (!Expect<TokenData::OpenParen>()) {
                 return std::nullopt;
             }
 
-            auto param_start_pos = lexer.total_string.size() - lexer.unanalyzed.size();
             auto left = ParseExpression();
             if (!left) {
                 return std::nullopt;
@@ -184,19 +183,18 @@ struct Parser {
                 return std::nullopt;
             }
 
-            auto param_end_pos = lexer.total_string.size() - lexer.unanalyzed.size();
             if (!Expect<TokenData::CloseParen>()) {
                 return std::nullopt;
             }
 
             std::optional<MeasureData> commonMeasure;
-            if (fun_spec.keepsMeasure) {
+            if (funSpec.keepsMeasure) {
                 auto measure = ResolveMeasure(left, right);
                 if (std::holds_alternative<NoMeasure>(measure)) {
                     OnError({
                         .kind = Error::Kind::MeasureMismatch,
-                        .secondary_invalid_range = left->measure->source_location,
-                        .invalid_range = right->measure->source_location,
+                        .secondaryInvalidRange = left->measure->sourceLocation,
+                        .invalidRange = right->measure->sourceLocation,
                     });
                     return std::nullopt;
                 }
@@ -208,7 +206,7 @@ struct Parser {
 
             return MeasuredValue{
                 .measure = commonMeasure,
-                .value = fun_spec.func(left->value, right->value),
+                .value = funSpec.func(left->value, right->value),
             };
         }
 
@@ -217,43 +215,42 @@ struct Parser {
     }
 
     std::optional<MeasuredValue> ParseValueWithMeasure() {
-        auto standalone_value = ParseStandaloneValue();
-        if (!standalone_value) {
+        auto standaloneValue = ParseStandaloneValue();
+        if (!standaloneValue) {
             return std::nullopt;
         }
 
         if (auto* measure = std::get_if<TokenData::Measure>(&lexer.curr.data)) {
-            const auto measure_end = lexer.total_string.size() - lexer.unanalyzed.size();
+            const auto measure_end = lexer.totalString.size() - lexer.unanalyzed.size();
             const auto measure_start = measure_end - lexer.curr.str.size();
             const auto& measure_data = **measure;
-            if (standalone_value->measure) {
-                if (standalone_value->measure->id != measure_data.id) {
+            if (standaloneValue->measure) {
+                if (standaloneValue->measure->id != measure_data.id) {
                     OnError({
                         .kind = Error::Kind::MeasureMismatch,
-                        .invalid_range = {measure_end - lexer.curr.str.size(), measure_end},
-                        .secondary_invalid_range = {standalone_value->measure->source_location},
+                        .invalidRange = {measure_end - lexer.curr.str.size(), measure_end},
+                        .secondaryInvalidRange = {standaloneValue->measure->sourceLocation},
                     });
 
                     return std::nullopt;
                 }
             } else {
                 Step();
-                standalone_value->measure =
+                standaloneValue->measure =
                     MeasureData{
-                        .source_location = {measure_start, measure_end},
+                        .sourceLocation = {measure_start, measure_end},
                         .id = measure_data.id,
                     },
-                standalone_value->value *= measure_data.multiplier;
+                standaloneValue->value *= measure_data.multiplier;
             }
         }
 
-        return standalone_value;
+        return standaloneValue;
     }
 
-    std::optional<MeasuredValue> ParseExpression(std::size_t parent_precedence = 0) {
-        auto expr_start_pos = lexer.total_string.size() - lexer.unanalyzed.size();
-        auto root_value = ParseValueWithMeasure();
-        if (!root_value) {
+    std::optional<MeasuredValue> ParseExpression(std::size_t parentPrecedence = 0) {
+        auto rootValue = ParseValueWithMeasure();
+        if (!rootValue) {
             return std::nullopt;
         }
 
@@ -263,22 +260,23 @@ struct Parser {
                 break;
             }
 
-            auto binary_end = lexer.total_string.size() - lexer.unanalyzed.size();
-            auto binary_start = binary_end - lexer.curr.str.size();
-            if (binary->precedence < parent_precedence) {
+            auto binaryEnd = lexer.totalString.size() - lexer.unanalyzed.size();
+            auto binaryStart = binaryEnd - lexer.curr.str.size();
+            if (binary->precedence < parentPrecedence) {
                 break;
             }
 
-            const auto right_prec =
-            binary->left_associative ? binary->precedence + 1 : binary->precedence;
+            const auto rightPrec =
+                binary->leftAssociative ? binary->precedence + 1 : binary->precedence;
 
             Step();
             std::optional<MeasuredValue> right;
 
-            if (spec.usePostfixShorthand && std::holds_alternative<TokenData::Eof>(lexer.curr.data)) {
-                right = root_value;
+            if (spec.usePostfixShorthand &&
+                std::holds_alternative<TokenData::Eof>(lexer.curr.data)) {
+                right = rootValue;
             } else {
-                right = ParseExpression(right_prec);
+                right = ParseExpression(rightPrec);
             }
 
             if (!right) {
@@ -286,13 +284,13 @@ struct Parser {
             }
 
             std::optional<MeasureData> commonMeasure;
-            auto measure = ResolveMeasure(root_value, right);
+            auto measure = ResolveMeasure(rootValue, right);
             if (std::holds_alternative<NoMeasure>(measure)) {
-                auto curr_pos = lexer.total_string.size() - lexer.unanalyzed.size();
+                auto curr_pos = lexer.totalString.size() - lexer.unanalyzed.size();
                 OnError({
                     .kind = Error::Kind::MeasureMismatch,
-                    .secondary_invalid_range = root_value->measure->source_location,
-                    .invalid_range = right->measure->source_location,
+                    .secondaryInvalidRange = rootValue->measure->sourceLocation,
+                    .invalidRange = right->measure->sourceLocation,
                 });
                 return std::nullopt;
             }
@@ -301,24 +299,22 @@ struct Parser {
                 commonMeasure = *specific;
             }
 
-            auto result = binary->func(root_value->value, right->value);
+            auto result = binary->func(rootValue->value, right->value);
             bool isNan = std::isnan(result);
             bool isInf = std::isinf(result);
             if (isNan || isInf) {
-                OnError({
-                    .kind = isNan ? Error::Kind::NotANumber : Error::Kind::InfiniteValue,
-                    .invalid_range = {binary_start, binary_end}
-                });
+                OnError({.kind = isNan ? Error::Kind::NotANumber : Error::Kind::InfiniteValue,
+                         .invalidRange = {binaryStart, binaryEnd}});
                 return std::nullopt;
             }
 
-            root_value = MeasuredValue{
+            rootValue = MeasuredValue{
                 .measure = commonMeasure,
                 .value = result,
             };
         }
 
-        return root_value;
+        return rootValue;
     }
 
     std::optional<MeasuredValue> Parse() {

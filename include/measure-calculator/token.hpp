@@ -27,8 +27,8 @@ struct Comma {};
 struct Error {};
 struct Eof {};
 
-using Any = std::variant<Operator, Measure, UnaryFun, BinaryFun, Constant,
-                         Value, OpenParen, CloseParen, Comma, Error, Eof>;
+using Any = std::variant<Operator, Measure, UnaryFun, BinaryFun, Constant, Value, OpenParen,
+                         CloseParen, Comma, Error, Eof>;
 
 } // namespace TokenData
 

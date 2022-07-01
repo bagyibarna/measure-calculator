@@ -46,14 +46,131 @@ auto operator+(T left, T right) {
 }
 
 const SpecBuilder kDefaultBuilder{
-    .unary_ops = Defaults::kNegateUnaryOp,
-    .binary_ops = Defaults::kArithmeticBinaryOps,
-    .unary_funs = Defaults::kBasicUnaryFuns + Defaults::kExponentialUnaryFuns +
+    .unaryOps = Defaults::kNegateUnaryOp,
+    .binaryOps = Defaults::kArithmeticBinaryOps,
+    .unaryFuns = Defaults::kBasicUnaryFuns + Defaults::kExponentialUnaryFuns +
                   Defaults::kTrigonometricUnaryFuns,
-    .binary_funs = Defaults::kBasicBinaryFuns,
+    .binaryFuns = Defaults::kBasicBinaryFuns,
     .constants = Defaults::kBasicConstants,
     .measures = {Defaults::kLinearMeasure},
 };
+
+TEST_CASE("Spec Failure Modes") {
+    using SBError = SpecBuilder::Error;
+
+    const auto buildsTo = [](SBError error, SpecBuilder spec) {
+        auto result = std::move(spec).Build();
+        CHECK_UNARY(std::holds_alternative<SBError>(result));
+        CHECK_EQ(std::get<SBError>(result), error);
+    };
+
+    const auto dummyUnaryFunc = [](double d) {return d;};
+    const auto dummyBinaryFunc = [](double d,double) {return d;};
+
+    SUBCASE ("Invalid Characters") {
+        buildsTo(SBError::InvalidOperatorName, {
+            .unaryOps = {
+                {"alma", {.func = dummyUnaryFunc}},
+            },
+        });
+
+        buildsTo(SBError::InvalidOperatorName, {
+            .binaryOps = {
+                {"alma", {.func = dummyBinaryFunc}},
+            },
+        });
+
+        buildsTo(SBError::InvalidIdentifierName, {
+            .measures = {
+                {"wat", {{"1", 1}}},
+            },
+        });
+
+        buildsTo(SBError::InvalidIdentifierName, {
+            .unaryFuns = {
+                {"min(", {.func = dummyUnaryFunc}}
+            }
+        });
+        buildsTo(SBError::InvalidIdentifierName, {
+            .binaryFuns = {
+                {"*", {.func = dummyBinaryFunc}}
+            }
+        });
+        buildsTo(SBError::InvalidIdentifierName, {
+            .constants = {
+                {"0", 0}
+            }
+        });
+        buildsTo(SBError::InvalidIdentifierName, {
+            .constants = {
+                {" ", 0}
+            }
+        });
+    }
+
+    SUBCASE("Duplicates") {
+        buildsTo(SBError::DuplicateOperator, {
+            .unaryOps = {
+                {"+", {.func = dummyUnaryFunc}},
+                {"+", {.func = dummyUnaryFunc}},
+            },
+        });
+        buildsTo(SBError::DuplicateOperator, {
+            .binaryOps = {
+                {"*", {.func = dummyBinaryFunc}},
+                {"*", {.func = dummyBinaryFunc}},
+            },
+        });
+        buildsTo(SBError::DuplicateOperator, {
+            .unaryOps = {
+                {"*", {.func = dummyUnaryFunc}},
+            },
+            .binaryOps = {
+                {"*", {.func = dummyBinaryFunc}},
+                {"*", {.func = dummyBinaryFunc}},
+            },
+        });
+
+        buildsTo(SBError::DuplicateIdentifier, {
+            .measures = {
+                {"name", {{"alma", 1}}},
+                {"name", {{"alma", 2}}},
+            },
+        });
+
+        buildsTo(SBError::DuplicateIdentifier, {
+            .measures = {
+                {"name", {{"alma", 1}}},
+            },
+            .unaryFuns = {
+                {"alma", {.func = dummyUnaryFunc}}
+            }
+        });
+
+        buildsTo(SBError::DuplicateIdentifier, {
+            .unaryFuns = {
+                {"name", {.func = dummyUnaryFunc}}
+            },
+            .constants = {
+                {"name", 12}
+            }
+        });
+    }
+
+    SUBCASE("Invalid Measures") {
+        buildsTo(SBError::ZeroMultiplier, {
+            .measures = {
+                {"name", {{"alma", 0}}},
+            },
+        });
+
+        buildsTo(SBError::NegativeMultiplier, {
+            .measures = {
+                {"name", {{"alma", -1}}},
+            },
+        });
+    }
+}
 
 TEST_CASE("Numbers") {
     Asserter assertion({});
@@ -192,7 +309,7 @@ TEST_CASE("Numbers") {
 
     SUBCASE("Failure Modes") {
         assertion("1e1000000",
-                  Error{.invalid_range = {0, 9}, .kind = Error::Kind::ConstantTooLarge});
+                  Error{.invalidRange = {0, 9}, .kind = Error::Kind::ConstantTooLarge});
     }
 }
 
@@ -217,14 +334,14 @@ TEST_CASE("Constants") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("asd", Error{.invalid_range = {0, 3}, .kind = Error::Kind::UnknownIdentifier});
+        assertion("asd", Error{.invalidRange = {0, 3}, .kind = Error::Kind::UnknownIdentifier});
     }
 }
 
 TEST_CASE("Operator Precedence") {
     Asserter assertion = SpecBuilder{
-        .unary_ops = {{"~", {.func = [](auto) { return 20.; }, .precedence = 2}}},
-        .binary_ops = {{"@", {.func = [](auto, auto) { return 10.; }, .precedence = 1}},
+        .unaryOps = {{"~", {.func = [](auto) { return 20.; }, .precedence = 2}}},
+        .binaryOps = {{"@", {.func = [](auto, auto) { return 10.; }, .precedence = 1}},
                        {"#", {.func = [](auto, auto) { return 30.; }, .precedence = 3}}},
     };
 
@@ -243,9 +360,9 @@ TEST_CASE("Operator Precedence") {
 
 TEST_CASE("Expression Evaluation Order") {
     Asserter assertion = SpecBuilder{
-        .binary_ops = {
-            {"<-", {.func = std::minus<double>{}, .left_associative = true, .precedence = 2}},
-            {"->", {.func = std::minus<double>{}, .left_associative = false, .precedence = 2}},
+        .binaryOps = {
+            {"<-", {.func = std::minus<double>{}, .leftAssociative = true, .precedence = 2}},
+            {"->", {.func = std::minus<double>{}, .leftAssociative = false, .precedence = 2}},
             {"@", {.func = std::minus<double>{}, .precedence = 1}},
             {"#", {.func = std::minus<double>{}, .precedence = 3}},
         }};
@@ -270,24 +387,24 @@ TEST_CASE("Expression Evaluation Order") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 @", Error{.invalid_range = {3, 3}, .kind = Error::Kind::ValueExpected},
-                  {Error{.invalid_range = {2, 2}, .kind = Error::Kind::ValueExpected}});
-        assertion("@ 1", Error{.invalid_range = {0, 1}, .kind = Error::Kind::ValueExpected});
+        assertion("1 @", Error{.invalidRange = {3, 3}, .kind = Error::Kind::ValueExpected},
+                  {Error{.invalidRange = {2, 2}, .kind = Error::Kind::ValueExpected}});
+        assertion("@ 1", Error{.invalidRange = {0, 1}, .kind = Error::Kind::ValueExpected});
     }
 }
 
 TEST_CASE("Function Calls") {
     Asserter assertion = SpecBuilder{
-        .unary_ops = Defaults::kNegateUnaryOp,
-        .binary_ops = Defaults::kArithmeticBinaryOps,
-        .unary_funs =
+        .unaryOps = Defaults::kNegateUnaryOp,
+        .binaryOps = Defaults::kArithmeticBinaryOps,
+        .unaryFuns =
             {
                 {"a", {.func = [](auto a) { return a + 10.; }}},
                 {"asd", {.func = [](auto a) { return a + 20.; }}},
                 {"asdaaaasssssdsddasdasd", {.func = [](auto a) { return a + 30.; }}},
                 {"bcd", {.func = [](auto a) { return a + 40.; }}},
             },
-        .binary_funs =
+        .binaryFuns =
             {
                 {"aa", {.func = [](auto a, auto b) { return a + b * 2 + 10.; }}},
                 {"aassdd", {.func = [](auto a, auto b) { return a + b * 2 + 20.; }}},
@@ -340,10 +457,10 @@ TEST_CASE("Function Calls") {
 
 TEST_CASE("Measures") {
     Asserter assertion = SpecBuilder{
-        .unary_ops = Defaults::kNegateUnaryOp,
-        .binary_ops = Defaults::kArithmeticBinaryOps,
-        .unary_funs = Defaults::kBasicUnaryFuns,
-        .binary_funs = Defaults::kBasicBinaryFuns,
+        .unaryOps = Defaults::kNegateUnaryOp,
+        .binaryOps = Defaults::kArithmeticBinaryOps,
+        .unaryFuns = Defaults::kBasicUnaryFuns,
+        .binaryFuns = Defaults::kBasicBinaryFuns,
         .measures = {Defaults::kLinearMeasure,
                      {"time",
                       {
@@ -383,15 +500,15 @@ TEST_CASE("Measures") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 km + 1 sec", Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {9, 12}, .secondary_invalid_range = {2, 4}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {5, 8}, .secondary_invalid_range = {1, 3}}});
-        assertion("max(1 km, 1 sec)", Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {12, 15}, .secondary_invalid_range = {6, 8}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalid_range = {9, 12}, .secondary_invalid_range = {5, 7}}});
+        assertion("1 km + 1 sec", Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {9, 12}, .secondaryInvalidRange = {2, 4}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {5, 8}, .secondaryInvalidRange = {1, 3}}});
+        assertion("max(1 km, 1 sec)", Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {12, 15}, .secondaryInvalidRange = {6, 8}}, {Error{.kind = Error::Kind::MeasureMismatch, .invalidRange = {9, 12}, .secondaryInvalidRange = {5, 7}}});
     }
 }
 
 TEST_CASE("Arithmetic Examples") {
     Asserter assertion = SpecBuilder{
-        .unary_ops = Defaults::kNegateUnaryOp,
-        .binary_ops = Defaults::kArithmeticBinaryOps,
+        .unaryOps = Defaults::kNegateUnaryOp,
+        .binaryOps = Defaults::kArithmeticBinaryOps,
     };
 
     SUBCASE("Basic Binary Operators") {
@@ -489,20 +606,20 @@ TEST_CASE("Arithmetic Examples") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("1 / 0", Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {1, 2}}});
-        assertion("1 / 0 + 3", Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalid_range = {1, 2}}});
-        assertion("0 / 0", Error{.kind = Error::Kind::NotANumber, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalid_range = {1, 2}}});
-        assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalid_range = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalid_range = {1, 2}}});
+        assertion("1 / 0", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
+        assertion("1 / 0 + 3", Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::InfiniteValue, .invalidRange = {1, 2}}});
+        assertion("0 / 0", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
+        assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}}, {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
 
     }
 }
 
 TEST_CASE("Posfix Binary ShortHand") {
     Asserter assertion = SpecBuilder{
-        .unary_ops = Defaults::kNegateUnaryOp,
-        .binary_ops = Defaults::kArithmeticBinaryOps,
-        .unary_funs = Defaults::kBasicUnaryFuns,
-        .binary_funs = Defaults::kBasicBinaryFuns,
+        .unaryOps = Defaults::kNegateUnaryOp,
+        .binaryOps = Defaults::kArithmeticBinaryOps,
+        .unaryFuns = Defaults::kBasicUnaryFuns,
+        .binaryFuns = Defaults::kBasicBinaryFuns,
         .usePostfixShorthand = true
     };
 
@@ -519,7 +636,7 @@ TEST_CASE("Posfix Binary ShortHand") {
     }
 
     SUBCASE("Failure Modes") {
-        assertion("3 - asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalid_range = {4, 7}}, {Error{.kind = Error::Kind::UnknownIdentifier, .invalid_range = {2, 5}}});
-        assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalid_range = {4, 5}}, {Error{.kind = Error::Kind::ValueExpected, .invalid_range = {3, 4}}});
+        assertion("3 - asd", Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {4, 7}}, {Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {2, 5}}});
+        assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {4, 5}}, {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {3, 4}}});
     }
 }
