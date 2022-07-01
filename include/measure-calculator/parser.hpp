@@ -193,8 +193,8 @@ struct Parser {
                 if (std::holds_alternative<NoMeasure>(measure)) {
                     OnError({
                         .kind = Error::Kind::MeasureMismatch,
-                        .secondaryInvalidRange = left->measure->sourceLocation,
                         .invalidRange = right->measure->sourceLocation,
+                        .secondaryInvalidRange = left->measure->sourceLocation,
                     });
                     return std::nullopt;
                 }
@@ -289,8 +289,8 @@ struct Parser {
                 auto curr_pos = lexer.totalString.size() - lexer.unanalyzed.size();
                 OnError({
                     .kind = Error::Kind::MeasureMismatch,
-                    .secondaryInvalidRange = rootValue->measure->sourceLocation,
                     .invalidRange = right->measure->sourceLocation,
+                    .secondaryInvalidRange = rootValue->measure->sourceLocation,
                 });
                 return std::nullopt;
             }

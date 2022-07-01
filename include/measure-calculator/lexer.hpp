@@ -32,9 +32,9 @@ struct Lexer {
         if (result == HUGE_VAL || result == -HUGE_VAL) {
             const auto firstInvalid = totalString.size() - unanalyzed.size();
             return Error{
-                .invalidRange = {firstInvalid, end - unanalyzed.data()},
                 .kind = result == HUGE_VAL ? Error::Kind::ConstantTooLarge
                                            : Error::Kind::ConstantTooSmall,
+                .invalidRange = {firstInvalid, end - unanalyzed.data()},
             };
         }
 
@@ -66,8 +66,8 @@ struct Lexer {
         const auto startIndex = totalString.size() - unanalyzed.size();
         curr.data = TokenData::Error{};
         return Error{
-            .invalidRange = {startIndex, startIndex + (end - begin)},
             .kind = kind,
+            .invalidRange = {startIndex, startIndex + (end - begin)},
         };
     }
 
@@ -132,8 +132,8 @@ struct Lexer {
         curr.data = TokenData::Error{};
         const auto firstInvalid = totalString.size() - unanalyzed.size();
         return Error{
-            .invalidRange = {firstInvalid, firstInvalid + 1},
             .kind = Error::Kind::UnknownChar,
+            .invalidRange = {firstInvalid, firstInvalid + 1},
         };
     }
 };

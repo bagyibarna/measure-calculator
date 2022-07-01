@@ -91,8 +91,9 @@ TEST_CASE("Spec Failure Modes") {
         buildsTo(SBError::DuplicateIdentifier,
                  {.measures = {{"name", {{"alma", 1}}}, {"name", {{"alma", 2}}}}});
 
-        buildsTo(SBError::DuplicateIdentifier, {.measures = {{"name", {{"alma", 1}}}},
-                                                .unaryFuns = {{"alma", {.func = dummyUnaryFunc}}}});
+        buildsTo(SBError::DuplicateIdentifier, {.unaryFuns = {{"alma", {.func = dummyUnaryFunc}}},
+                                                .measures = {{"name", {{"alma", 1}}}}
+                                                });
 
         buildsTo(SBError::DuplicateIdentifier,
                  {.unaryFuns = {{"name", {.func = dummyUnaryFunc}}}, .constants = {{"name", 12}}});
