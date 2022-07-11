@@ -120,6 +120,7 @@ TEST_CASE("Numbers") {
     SUBCASE("Decimal Float") {
         assertion("0.0", 0.);
         assertion("0.1", 0.1);
+        assertion(".1", 0.1);
         assertion("1.0", 1.0);
         assertion("01.01", 1.01);
         assertion("10.10", 10.1);
@@ -241,6 +242,10 @@ TEST_CASE("Numbers") {
     SUBCASE("Failure Modes") {
         assertion("1e1000000",
                   Error{.kind = Error::Kind::ConstantTooLarge, .invalidRange = {0, 9}});
+        assertion(".a",
+                  Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
+        assertion(".",
+                  Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
     }
 }
 

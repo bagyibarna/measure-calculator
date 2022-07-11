@@ -94,6 +94,15 @@ struct Lexer {
             case '(': return TokenizeSingleChar(TokenData::OpenParen{});
             case ')': return TokenizeSingleChar(TokenData::CloseParen{});
             case ',': return TokenizeSingleChar(TokenData::Comma{});
+            case '.':
+                if (unanalyzed.size() < 2 || !std::isdigit(unanalyzed[1])) {
+                    const auto firstInvalid = totalString.size() - unanalyzed.size();
+                    return Error{
+                        .kind = Error::Kind::DigitsExpected,
+                        .invalidRange = {firstInvalid, firstInvalid + 2},
+                    };
+                }
+                [[fallthrough]];
             case '0':
             case '1':
             case '2':

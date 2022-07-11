@@ -15,6 +15,7 @@ struct Error {
         UnknownIdentifier,
         UnknownOperator,
         UnknownChar,
+        DigitsExpected,
 
         UnexpectedEof,
         UnexpectedToken,
@@ -49,6 +50,7 @@ inline std::ostream& operator<<(std::ostream& os, const Error& error) {
         case Error::Kind::MeasureMismatch: os << "MeasureMismatch"; break;
         case Error::Kind::NotANumber: os << "NotANumber"; break;
         case Error::Kind::InfiniteValue: os << "InfiniteValue"; break;
+        case Error::Kind::DigitsExpected: os << "DigitsExpected"; break;
     }
 
     os << "{" << error.invalidRange.first << ", " << error.invalidRange.second << "}";
