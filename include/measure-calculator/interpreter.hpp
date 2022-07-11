@@ -19,8 +19,8 @@ struct MeasuredValue {
 
 namespace Detail {
 
-struct Parser {
-    Parser(const Spec& spec, std::string_view totalString)
+struct Interpreter {
+    Interpreter(const Spec& spec, std::string_view totalString)
         : spec(spec),
           lexer{
               .spec = spec,

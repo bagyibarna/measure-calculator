@@ -1,6 +1,6 @@
 #pragma once
 
-#include "parser.hpp"
+#include "interpreter.hpp"
 
 #include <string_view>
 #include <variant>
@@ -8,7 +8,7 @@
 namespace Calc {
 
 std::variant<double, Error> Evaluate(const Spec& spec, std::string_view str) {
-    Detail::Parser parser(spec, str);
+    Detail::Interpreter parser(spec, str);
 
     if (auto measuredValue = parser.ParseExpression()) {
         return measuredValue->value;

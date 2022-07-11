@@ -24,7 +24,7 @@ struct MeasureSpec {
 namespace Detail {
 
 struct Lexer;
-struct Parser;
+struct Interpreter;
 
 } // namespace Detail
 
@@ -38,7 +38,7 @@ struct Spec {
   private:
     friend struct SpecBuilder;
     friend struct Detail::Lexer;
-    friend struct Detail::Parser;
+    friend struct Detail::Interpreter;
 
     std::unordered_map<std::string_view, Operator> opSpecs;
 
