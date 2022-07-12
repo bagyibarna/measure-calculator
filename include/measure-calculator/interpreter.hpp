@@ -240,7 +240,7 @@ struct Interpreter {
                     MeasureData{
                         .sourceLocation = {measure_start, measure_end},
                         .id = measure_data.id,
-                    },
+                    };
                 standaloneValue->value *= measure_data.multiplier;
             }
         }
