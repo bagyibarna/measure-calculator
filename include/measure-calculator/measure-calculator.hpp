@@ -10,7 +10,7 @@ namespace Calc {
 std::variant<double, Error> Evaluate(const Spec& spec, std::string_view str) {
     Detail::Interpreter parser(spec, str);
 
-    if (auto measuredValue = parser.ParseExpression()) {
+    if (auto measuredValue = parser.Parse()) {
         return measuredValue->value;
     }
 

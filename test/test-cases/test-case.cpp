@@ -568,6 +568,7 @@ TEST_CASE("Arithmetic Examples") {
                   {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
         assertion("0 / 0 + 3", Error{.kind = Error::Kind::NotANumber, .invalidRange = {2, 3}},
                   {Error{.kind = Error::Kind::NotANumber, .invalidRange = {1, 2}}});
+        assertion("3)", Error{.kind = Error::Kind::UnexpectedToken, .invalidRange = {1, 2}});
     }
 }
 
@@ -595,5 +596,7 @@ TEST_CASE("Posfix Binary ShortHand") {
                   {Error{.kind = Error::Kind::UnknownIdentifier, .invalidRange = {2, 5}}});
         assertion("(3 -)", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {4, 5}},
                   {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {3, 4}}});
+        assertion("3 + + ", Error{.kind = Error::Kind::ValueExpected, .invalidRange = {4, 5}},
+                  {Error{.kind = Error::Kind::ValueExpected, .invalidRange = {2, 3}}});
     }
 }
