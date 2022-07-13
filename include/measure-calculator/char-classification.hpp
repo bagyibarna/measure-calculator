@@ -42,7 +42,7 @@ inline bool IsReservedChar(char c) {
     }
 }
 
-inline bool IsAscii(char c) { return c >= -1 && c < 255; }
+inline bool IsAscii(char c) { return c >= 0; }
 
 inline bool IsWhiteSpace(char c) { return IsAscii(c) && std::isspace(c); }
 
