@@ -21,7 +21,7 @@ struct Lexer {
     Token curr;
 
     void EatWhitespace() {
-        while (!unanalyzed.empty() && std::isspace(unanalyzed.front())) {
+        while (!unanalyzed.empty() && IsWhiteSpace(unanalyzed.front())) {
             unanalyzed.remove_prefix(1);
         }
     }
@@ -95,7 +95,7 @@ struct Lexer {
             case ')': return TokenizeSingleChar(TokenData::CloseParen{});
             case ',': return TokenizeSingleChar(TokenData::Comma{});
             case '.':
-                if (unanalyzed.size() < 2 || !std::isdigit(unanalyzed[1])) {
+                if (unanalyzed.size() < 2 || !IsDigit(unanalyzed[1])) {
                     const auto firstInvalid = totalString.size() - unanalyzed.size();
                     return Error{
                         .kind = Error::Kind::DigitsExpected,

@@ -26,7 +26,7 @@ struct Asserter {
         CHECK_EQ(std::get<PureT>(result), WrapForCheck(expected));
 
         std::string noWhitespace(str.begin(), str.end());
-        noWhitespace.erase(std::remove_if(noWhitespace.begin(), noWhitespace.end(), ::isspace),
+        noWhitespace.erase(std::remove_if(noWhitespace.begin(), noWhitespace.end(), Detail::IsWhiteSpace),
                            noWhitespace.end());
 
         auto noWhitespaceResult = Evaluate(spec, noWhitespace);
@@ -89,8 +89,7 @@ TEST_CASE("Spec Failure Modes") {
                  {.measures = {{"name", {{"alma", 1}}}, {"name", {{"alma", 2}}}}});
 
         buildsTo(SBError::DuplicateIdentifier, {.unaryFuns = {{"alma", {.func = dummyUnaryFunc}}},
-                                                .measures = {{"name", {{"alma", 1}}}}
-                                                });
+                                                .measures = {{"name", {{"alma", 1}}}}});
 
         buildsTo(SBError::DuplicateIdentifier,
                  {.unaryFuns = {{"name", {.func = dummyUnaryFunc}}}, .constants = {{"name", 12}}});
@@ -242,10 +241,8 @@ TEST_CASE("Numbers") {
     SUBCASE("Failure Modes") {
         assertion("1e1000000",
                   Error{.kind = Error::Kind::ConstantTooLarge, .invalidRange = {0, 9}});
-        assertion(".a",
-                  Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
-        assertion(".",
-                  Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
+        assertion(".a", Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
+        assertion(".", Error{.kind = Error::Kind::DigitsExpected, .invalidRange = {0, 2}});
     }
 }
 

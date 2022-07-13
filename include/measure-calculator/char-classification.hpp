@@ -42,13 +42,19 @@ inline bool IsReservedChar(char c) {
     }
 }
 
+inline bool IsAscii(char c) { return c >= -1 && c < 255; }
+
+inline bool IsWhiteSpace(char c) { return IsAscii(c) && std::isspace(c); }
+
+inline bool IsDigit(char c) { return IsAscii(c) && std::isdigit(c); }
+
 inline bool IsIdentifierStartChar(char c) {
-    return c < 0 ||
+    return !IsAscii(c) ||
            (!IsOperatorChar(c) && !IsReservedChar(c) && !std::isdigit(c) && !std::isspace(c));
 }
 
 inline bool IsIdentifierChar(char c) {
-    return c < 0 || (!IsOperatorChar(c) && !IsReservedChar(c) && !std::isspace(c));
+    return !IsAscii(c) || (!IsOperatorChar(c) && !IsReservedChar(c) && !std::isspace(c));
 }
 
 } // namespace Detail
