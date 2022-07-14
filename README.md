@@ -1,6 +1,6 @@
 ![Unit Tests](https://github.com/bagyibarna/measure-calculator/workflows/UnitTest/badge.svg)
 
-# A Fully Customizable, Interactive Calculator Library
+# Measure-Calculator
 
 `measure-calculator` is a calculator library designed for continous user interaction:
  - supports measures (`m`, `ft`, etc.)
