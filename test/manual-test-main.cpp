@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
                                    .Build());
 
     auto res = Evaluate(spec, to_eval);
+    std::cout << "\"" << to_eval << "\"=";
     if (auto d = std::get_if<double>(&res)) {
         std::cout << *d << std::endl;
     } else {
