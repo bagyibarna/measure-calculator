@@ -29,7 +29,8 @@ struct Lexer {
     std::optional<Error> TokenizeValue() {
         char* end;
         auto result = std::strtod(unanalyzed.data(), &end);
-        if (result == HUGE_VAL || result == -HUGE_VAL) {
+        if (errno == ERANGE || result == HUGE_VAL || result == -HUGE_VAL) {
+            errno = 0;
             const auto firstInvalid = totalString.size() - unanalyzed.size();
             return Error{
                 .kind = result == HUGE_VAL ? Error::Kind::ConstantTooLarge
