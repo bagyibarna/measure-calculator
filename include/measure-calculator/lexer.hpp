@@ -31,6 +31,7 @@ struct Lexer {
         auto result = std::strtod(unanalyzed.data(), &end);
         if (errno == ERANGE || result == HUGE_VAL || result == -HUGE_VAL) {
             errno = 0;
+            curr.data = TokenData::Error{};
             const auto firstInvalid = totalString.size() - unanalyzed.size();
             return Error{
                 .kind = result == HUGE_VAL ? Error::Kind::ConstantTooLarge
@@ -97,6 +98,7 @@ struct Lexer {
             case ',': return TokenizeSingleChar(TokenData::Comma{});
             case '.':
                 if (unanalyzed.size() < 2 || !IsDigit(unanalyzed[1])) {
+                    curr.data = TokenData::Error{};
                     const auto firstInvalid = totalString.size() - unanalyzed.size();
                     return Error{
                         .kind = Error::Kind::DigitsExpected,
